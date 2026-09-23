@@ -10,6 +10,7 @@ const navItems = [
   { name: "Tenants", href: "/tenants" },
   { name: "Leases", href: "/leases" },
   { name: "Billing & Invoices", href: "/billing" },
+  { name: "Payments", href: "/payments" },
   { name: "Maintenance", href: "/maintenance" },
   { name: "Expenses", href: "/expenses" },
 ];

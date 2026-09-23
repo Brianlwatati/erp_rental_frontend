@@ -89,7 +89,18 @@ export function PropertyUnitsTab({
     },
     {
       header: "Type",
-      accessor: (row) => row.unit_type?.name || "—",
+      accessor: (row) => {
+        // First check nested relation, fallback to matching unit_type_id / unitTypeId from unitTypes prop
+        const typeId = row.unit_type_id || (row as any).unitTypeId;
+        const matchedType = unitTypes.find((ut) => ut.id === typeId);
+        const typeName = row.unit_type?.name || matchedType?.name;
+
+        return typeName ? (
+          <span className="font-medium text-slate-800">{typeName}</span>
+        ) : (
+          <span className="text-slate-400 font-normal">—</span>
+        );
+      },
     },
     {
       header: "Floor",

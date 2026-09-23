@@ -19,6 +19,9 @@ type BadgeStatus =
   | "MAINTENANCE"
   | "INACTIVE"
   | "RESERVED"
+  | "BLACKLISTED"
+  | "DRAFT"
+  | "TERMINATED"
   | "OPEN";
 
 interface BadgeProps {
@@ -48,6 +51,11 @@ export const StatusBadge: React.FC<BadgeProps> = ({ status, label }) => {
       case "URGENT":
       case "HIGH":
         return "bg-rose-50 text-rose-700 border-rose-200";
+
+      case "CLOSED":
+      case "LOW":
+      case "MEDIUM":
+        return "bg-slate-50 text-slate-600 border-slate-200";
 
       default:
         return "bg-slate-50 text-slate-600 border-slate-200";
