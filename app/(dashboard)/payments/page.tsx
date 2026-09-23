@@ -101,16 +101,16 @@ export default function PaymentsPage() {
               {payments.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50/50">
                   <td className="p-3 font-medium text-slate-900">
-                    {p.paymentNumber}
+                    {p.payment_number}
                   </td>
-                  <td className="p-3">{p.paymentDate}</td>
+                  <td className="p-3">{p.payment_date}</td>
                   <td className="p-3">
                     <span className="px-2 py-0.5 rounded bg-slate-100 font-semibold text-[10px]">
-                      {p.paymentMethod}
+                      {p.payment_method}
                     </span>
                   </td>
                   <td className="p-3 font-mono text-slate-600">
-                    {p.referenceNumber || "—"}
+                    {p.reference_number || "—"}
                   </td>
                   <td className="p-3 font-bold text-slate-900">
                     KES {p.amount.toLocaleString()}

@@ -12,6 +12,9 @@ export default function BillingPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Per-invoice loading state for action buttons
+  const [issuingId, setIssuingId] = useState<string | null>(null);
+
   // Modals & Selection
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -50,6 +53,36 @@ export default function BillingPage() {
   const handleEdit = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
+  };
+
+  // Issue Draft Invoice Functionality
+  const handleIssue = async (invoice: Invoice) => {
+    if (
+      !confirm(
+        `Are you sure you want to issue invoice #${invoice.invoice_number}?`,
+      )
+    ) {
+      return;
+    }
+
+    setIssuingId(invoice.id);
+    try {
+      await apiFetch(`/invoices/${invoice.id}/issue`, {
+        method: "POST",
+        body: JSON.stringify({
+          id: invoice.id,
+          tenantId: invoice.tenant_id,
+        }),
+      });
+
+      // Refresh list to update badge to ISSUED
+      await fetchData();
+    } catch (err: any) {
+      console.error("Failed to issue invoice:", err);
+      alert(err.message || "Failed to issue invoice. Please try again.");
+    } finally {
+      setIssuingId(null);
+    }
   };
 
   const filteredInvoices = invoices.filter((inv) => {
@@ -171,7 +204,18 @@ export default function BillingPage() {
                     KES {Number(inv.balance).toLocaleString()}
                   </td>
                   <td className="p-3">{getStatusBadge(inv.status)}</td>
-                  <td className="p-3 text-right">
+                  <td className="p-3 text-right space-x-2">
+                    {/* Issue Button: Rendered only when status is DRAFT */}
+                    {inv.status === "DRAFT" && (
+                      <button
+                        onClick={() => handleIssue(inv)}
+                        disabled={issuingId === inv.id}
+                        className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs disabled:opacity-50"
+                      >
+                        {issuingId === inv.id ? "Issuing..." : "Issue"}
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleEdit(inv)}
                       className="text-blue-600 hover:text-blue-800 font-semibold text-xs"

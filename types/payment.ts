@@ -38,11 +38,11 @@ export interface Payment {
   id: string;
   companyId: string;
   tenantId: string;
-  paymentNumber: string;
-  paymentDate: string;
+  payment_number: string;
+  payment_date: string;
   amount: number;
-  paymentMethod: "CASH" | "BANK" | "MPESA" | "CARD" | "CHEQUE" | "OTHER";
-  referenceNumber?: string;
+  payment_method: "CASH" | "BANK" | "MPESA" | "CARD" | "CHEQUE" | "OTHER";
+  reference_number?: string;
   notes?: string;
   status: "PENDING" | "POSTED" | "REVERSED" | "CANCELLED";
   allocations?: PaymentAllocation[];
