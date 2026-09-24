@@ -12,7 +12,6 @@ import {
   Home,
   LogOut,
   Receipt,
-  Settings,
   UserRound,
   Users,
   Wrench,
