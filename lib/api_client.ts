@@ -1,9 +1,17 @@
 import { LoginPayload, LoginResponseData, User } from "@/types/api";
 
-const AUTH_URL =
-  process.env.NEXT_PUBLIC_AUTH_URL || "http://127.0.0.1:5000/api/v1";
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000/api/v1";
+const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+function requireApiUrl(value: string | undefined, name: string): string {
+  if (value) return value.replace(/\/$/, "");
+  if (process.env.NODE_ENV === "development") {
+    return name === "NEXT_PUBLIC_AUTH_URL"
+      ? "http://127.0.0.1:5000/api/v1"
+      : "http://127.0.0.1:4000/api/v1";
+  }
+  throw new Error(`${name} is not configured.`);
+}
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -11,63 +19,88 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-// Client for General API Endpoints (Port 4000)
+async function readJson<T>(response: Response): Promise<T | null> {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) return null;
+
+  try {
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+// Client for general rental API endpoints.
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
+  const baseUrl = requireApiUrl(API_URL, "NEXT_PUBLIC_API_URL");
   const token =
     typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
+  const headers = new Headers(options.headers);
+  if (!headers.has("Content-Type") && options.body) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${endpoint}`, {
+      ...options,
+      headers,
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("Unable to reach the server. Please check your connection.");
+  }
 
-  const result = await response.json();
+  const result = await readJson<ApiResponse<T> & { message?: string }>(response);
 
-  if (!response.ok || !result.success) {
-    if (response.status === 401) {
-      // await logoutUser(true);
+  if (!response.ok || !result?.success) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("companyId");
+      localStorage.removeItem("user");
     }
     throw new Error(
-      result.message ||
-        "An error occurred while communicating with the server.",
+      result?.message || "An error occurred while communicating with the server.",
     );
   }
 
   return result;
 }
 
-// Dedicated Client for Login / Auth Service (Port 5000)
+// Dedicated client for the central authentication service.
 export async function loginUser(
   credentials: Partial<LoginPayload>,
 ): Promise<LoginResponseData> {
+  const baseUrl = requireApiUrl(AUTH_URL, "NEXT_PUBLIC_AUTH_URL");
   const payload: LoginPayload = {
     email: credentials.email || "",
     password: credentials.password || "",
     productCode: "RENTAL",
   };
 
-  const response = await fetch(`${AUTH_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("Unable to reach the authentication server.");
+  }
 
-  const result: ApiResponse<LoginResponseData> = await response.json();
+  const result = await readJson<ApiResponse<LoginResponseData>>(response);
 
-  if (!response.ok || !result.success) {
+  if (!response.ok || !result?.success) {
     throw new Error(
-      result.message || "Login failed. Please check your credentials.",
+      result?.message || "Login failed. Please check your credentials.",
     );
   }
 
@@ -81,43 +114,42 @@ export async function loginUser(
   return result.data;
 }
 
-// Logout Utility: Calls http://127.0.0.1:5000/api/v1/auth/logout
 export async function logoutUser(redirectToLogin = true) {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("accessToken");
+  if (typeof window === "undefined") return;
 
-    if (token) {
-      try {
-        await fetch(`${AUTH_URL}/auth/logout`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      } catch (error) {
-        console.error("Logout API request failed:", error);
-      }
-    }
+  const token = localStorage.getItem("accessToken");
 
-    // Clear local storage items regardless of network status
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("companyId");
-    localStorage.removeItem("user");
-
-    if (redirectToLogin) {
-      window.location.href = "/login";
+  if (token) {
+    try {
+      const baseUrl = requireApiUrl(AUTH_URL, "NEXT_PUBLIC_AUTH_URL");
+      await fetch(`${baseUrl}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      });
+    } catch (error) {
+      console.error("Logout API request failed:", error);
     }
   }
+
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("companyId");
+  localStorage.removeItem("user");
+
+  if (redirectToLogin) window.location.replace("/login");
 }
 
 export function getCurrentUser(): User | null {
   if (typeof window === "undefined") return null;
   const userStr = localStorage.getItem("user");
   if (!userStr) return null;
+
   try {
-    return JSON.parse(userStr);
+    return JSON.parse(userStr) as User;
   } catch {
     return null;
   }

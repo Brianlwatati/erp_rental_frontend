@@ -27,7 +27,7 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Properties</h1>
           <p className="text-sm text-slate-500">

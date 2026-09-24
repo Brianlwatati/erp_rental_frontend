@@ -63,7 +63,7 @@ export default function OverviewPage() {
       : (data.totalRevenue || 0) - (data.totalExpenses || 0);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-0 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -128,7 +128,7 @@ export default function OverviewPage() {
         {/* Occupancy Rate */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Occupancy Rate
               </p>
@@ -139,11 +139,11 @@ export default function OverviewPage() {
                     : "bg-amber-50 text-amber-700 border-amber-200"
                 }`}
               >
-                {data.occupancyRate || 0}%
+                {data.occupancyRate.toFixed(2) || 0}%
               </span>
             </div>
             <p className="text-2xl font-extrabold text-slate-900 mt-1">
-              {data.occupancyRate || 0}%
+              {data.occupancyRate.toFixed(2) || 0}%
             </p>
           </div>
           <p className="text-[11px] text-slate-500 mt-3 border-t border-slate-100 pt-2">
@@ -199,6 +199,7 @@ export default function OverviewPage() {
             KES{" "}
             {calculatedNetIncome.toLocaleString("en-US", {
               minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
             })}
           </p>
           <p className="text-[11px] text-slate-400 mt-2">

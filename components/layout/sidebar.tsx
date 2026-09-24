@@ -2,58 +2,125 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Building2,
+  ClipboardList,
+  CreditCard,
+  FileText,
+  Home,
+  LogOut,
+  Receipt,
+  Settings,
+  UserRound,
+  Users,
+  Wrench,
+  X,
+} from "lucide-react";
 import { logoutUser } from "@/lib/api_client";
 
 const navItems = [
-  { name: "Overview", href: "/" },
-  { name: "Properties", href: "/properties" },
-  { name: "Tenants", href: "/tenants" },
-  { name: "Leases", href: "/leases" },
-  { name: "Billing & Invoices", href: "/billing" },
-  { name: "Payments", href: "/payments" },
-  { name: "Maintenance", href: "/maintenance" },
-  { name: "Expenses", href: "/expenses" },
+  { name: "Overview", href: "/dashboard", icon: Home },
+  { name: "Properties", href: "/properties", icon: Building2 },
+  { name: "Tenants", href: "/tenants", icon: Users },
+  { name: "Leases", href: "/leases", icon: ClipboardList },
+  { name: "Billing & Invoices", href: "/billing", icon: FileText },
+  { name: "Payments", href: "/payments", icon: CreditCard },
+  { name: "Maintenance", href: "/maintenance", icon: Wrench },
+  { name: "Expenses", href: "/expenses", icon: Receipt },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
 
+  const handleNavigation = () => onClose();
+
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800">
-      <div className="h-16 flex items-center px-6 border-b border-slate-800 font-bold text-lg text-white tracking-wide">
-        PropManager <span className="text-blue-500 ml-1">HQ</span>
-      </div>
+    <>
+      <div
+        aria-hidden="true"
+        onClick={onClose}
+        className={`fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-[1px] transition-opacity lg:hidden ${
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
 
-      <nav className="flex-1 px-4 py-6 space-y-1">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-              }`}
-            >
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
+      <aside
+        aria-label="Main navigation"
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(84vw,18rem)] flex-col border-r border-slate-800 bg-slate-950 text-slate-300 shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-64 lg:translate-x-0 lg:shadow-none ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800 px-5 sm:px-6">
+          <Link
+            href="/dashboard"
+            onClick={handleNavigation}
+            className="font-bold text-lg tracking-wide text-white"
+          >
+            Rental <span className="text-blue-500">ERP</span>
+          </Link>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close navigation"
+            className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-      {/* Logout Action in Sidebar */}
-      <div className="p-4 border-t border-slate-800 flex flex-col gap-2">
-        <button
-          onClick={() => logoutUser(true)}
-          className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-colors"
-        >
-          &rarr; Sign Out
-        </button>
-      </div>
-    </aside>
+        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5 sm:px-4">
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+            Workspace
+          </p>
+          <div className="space-y-1">
+            {navItems.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={handleNavigation}
+                  className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                  }`}
+                >
+                  <Icon
+                    className="h-[18px] w-[18px] shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        <div className="shrink-0 border-t border-slate-800 p-3 sm:p-4">
+          <div className="mb-2 hidden items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-xs text-slate-400 sm:flex">
+            <UserRound className="h-4 w-4" />
+            <span>Property workspace</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => logoutUser(true)}
+            className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-950/40 hover:text-rose-300"
+          >
+            <LogOut className="h-[18px] w-[18px]" />
+            Sign out
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

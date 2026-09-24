@@ -96,7 +96,7 @@ export default function LeaseDetailPage() {
 
   if (error || !lease) {
     return (
-      <div className="p-6 max-w-7xl mx-auto space-y-4">
+      <div className="p-0 max-w-7xl mx-auto space-y-4">
         <Link
           href="/leases"
           className="inline-flex items-center text-xs text-blue-600 font-semibold hover:underline"
@@ -160,7 +160,7 @@ export default function LeaseDetailPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-0 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       <div>
         <Link
           href="/leases"

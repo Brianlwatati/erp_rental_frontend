@@ -62,9 +62,9 @@ export default function PaymentsPage() {
   }, []);
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-0 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Rental Payments</h1>
           <p className="text-xs text-slate-500">
@@ -80,13 +80,13 @@ export default function PaymentsPage() {
       </div>
 
       {/* Payments Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
         {loading ? (
           <div className="p-8 text-center text-xs text-slate-500">
             Loading payments...
           </div>
         ) : (
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[640px] text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
               <tr>
                 <th className="p-3">Payment No.</th>

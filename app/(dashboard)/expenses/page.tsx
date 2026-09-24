@@ -79,7 +79,7 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-0 max-w-7xl mx-auto space-y-6">
       {/* Page Title & Context Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -158,7 +158,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* Content Panels */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
         {loading ? (
           <div className="p-8 text-center text-xs text-slate-500">
             Loading records...
@@ -167,7 +167,7 @@ export default function ExpensesPage() {
           <>
             {/* TAB 1: EXPENSES TABLE */}
             {activeTab === "expenses" && (
-              <table className="w-full text-left text-xs text-slate-600">
+              <table className="w-full min-w-[680px] text-left text-xs text-slate-600">
                 <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
                     <th className="p-3">Expense #</th>
@@ -245,7 +245,7 @@ export default function ExpensesPage() {
 
             {/* TAB 2: CATEGORIES TABLE */}
             {activeTab === "categories" && (
-              <table className="w-full text-left text-xs text-slate-600">
+              <table className="w-full min-w-[680px] text-left text-xs text-slate-600">
                 <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
                     <th className="p-3">Code</th>
@@ -305,7 +305,7 @@ export default function ExpensesPage() {
 
             {/* TAB 3: VENDORS TABLE */}
             {activeTab === "vendors" && (
-              <table className="w-full text-left text-xs text-slate-600">
+              <table className="w-full min-w-[680px] text-left text-xs text-slate-600">
                 <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
                     <th className="p-3">Vendor Name</th>

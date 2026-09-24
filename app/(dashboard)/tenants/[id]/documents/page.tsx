@@ -45,7 +45,7 @@ export default function TenantDocumentsPage() {
 
   if (error || !tenant) {
     return (
-      <div className="p-6 max-w-7xl mx-auto space-y-4">
+      <div className="p-0 max-w-7xl mx-auto space-y-4">
         <Link
           href="/tenants"
           className="inline-flex items-center text-xs text-blue-600 font-semibold hover:underline"
@@ -60,7 +60,7 @@ export default function TenantDocumentsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-0 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Navigation Header */}
       <div>
         <Link
