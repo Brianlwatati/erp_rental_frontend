@@ -47,6 +47,8 @@ export function Sidebar({
 
   const handleNavigation = () => onClose();
 
+  console.log(collapsed);
+
   return (
     <>
       <div

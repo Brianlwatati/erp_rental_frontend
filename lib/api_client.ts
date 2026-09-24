@@ -30,6 +30,60 @@ async function readJson<T>(response: Response): Promise<T | null> {
   }
 }
 
+export async function clearClientData() {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch {
+    // Storage can be unavailable in private browsing modes.
+  }
+
+  try {
+    for (const cookie of document.cookie.split(";")) {
+      const name = cookie.split("=")[0]?.trim();
+      if (name) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    }
+  } catch {
+    // Cookie access can be blocked by browser privacy settings.
+  }
+
+  try {
+    if (window.caches) {
+      const cacheNames = await window.caches.keys();
+      await Promise.all(cacheNames.map((name) => window.caches.delete(name)));
+    }
+  } catch {
+    // Cache Storage is optional and should not prevent redirecting.
+  }
+
+  try {
+    if (window.indexedDB?.databases) {
+      const databases = await window.indexedDB.databases();
+      await Promise.all(
+        databases
+          .map((database) => database.name)
+          .filter((name): name is string => Boolean(name))
+          .map(
+            (name) =>
+              new Promise<void>((resolve) => {
+                const request = window.indexedDB.deleteDatabase(name);
+                request.onsuccess =
+                  request.onerror =
+                  request.onblocked =
+                    () => resolve();
+              }),
+          ),
+      );
+    }
+  } catch {
+    // IndexedDB is optional and should not prevent redirecting.
+  }
+}
+
 // Client for general rental API endpoints.
 export async function apiFetch<T>(
   endpoint: string,
@@ -53,20 +107,23 @@ export async function apiFetch<T>(
       cache: "no-store",
     });
   } catch {
-    throw new Error("Unable to reach the server. Please check your connection.");
+    throw new Error(
+      "Unable to reach the server. Please check your connection.",
+    );
   }
 
-  const result = await readJson<ApiResponse<T> & { message?: string }>(response);
+  const result = await readJson<ApiResponse<T> & { message?: string }>(
+    response,
+  );
 
   if (!response.ok || !result?.success) {
     if (response.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("companyId");
-      localStorage.removeItem("user");
+      await clearClientData();
+      window.location.replace("/login");
     }
     throw new Error(
-      result?.message || "An error occurred while communicating with the server.",
+      result?.message ||
+        "An error occurred while communicating with the server.",
     );
   }
 
@@ -120,25 +177,20 @@ export async function logoutUser(redirectToLogin = true) {
   const token = localStorage.getItem("accessToken");
 
   if (token) {
-    try {
-      const baseUrl = requireApiUrl(AUTH_URL, "NEXT_PUBLIC_AUTH_URL");
-      await fetch(`${baseUrl}/auth/logout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        cache: "no-store",
-      });
-    } catch (error) {
+    const baseUrl = requireApiUrl(AUTH_URL, "NEXT_PUBLIC_AUTH_URL");
+    void fetch(`${baseUrl}/auth/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    }).catch((error) => {
       console.error("Logout API request failed:", error);
-    }
+    });
   }
 
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("companyId");
-  localStorage.removeItem("user");
+  await clearClientData();
 
   if (redirectToLogin) window.location.replace("/login");
 }

@@ -10,12 +10,16 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    setUser(getCurrentUser());
+    const frame = window.requestAnimationFrame(() => {
+      setUser(getCurrentUser());
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setLoggingOut(true);
-    await logoutUser(true);
+    logoutUser(true);
   };
 
   const initials = user
@@ -66,7 +70,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           className="flex min-h-10 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">{loggingOut ? "Logging out..." : "Logout"}</span>
+          <span className="hidden sm:inline">
+            {loggingOut ? "Logging out..." : "Logout"}
+          </span>
         </button>
       </div>
     </header>
