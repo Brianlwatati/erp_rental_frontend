@@ -95,10 +95,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                       : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
                   }`}
                 >
-                  <Icon
-                    className="h-[18px] w-[18px] shrink-0"
-                    aria-hidden="true"
-                  />
+                  <Icon className="h-4.5 w-4.5shrink-0" aria-hidden="true" />
                   <span className="truncate">{item.name}</span>
                 </Link>
               );
@@ -116,7 +113,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             onClick={() => logoutUser(true)}
             className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-950/40 hover:text-rose-300"
           >
-            <LogOut className="h-[18px] w-[18px]" />
+            <LogOut className="h-4.5 w-4.5" />
             Sign out
           </button>
         </div>
