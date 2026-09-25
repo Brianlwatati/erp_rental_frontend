@@ -18,6 +18,8 @@ export interface Property {
 export interface Building {
   id: string;
   property_id: string;
+  property_name?: string;
+  property_code?: string;
   name: string;
   code: string;
   floors?: number;
@@ -48,6 +50,7 @@ export interface Unit {
   description?: string;
   created_at: string;
   updated_at: string;
-  building?: Building;
+  building_name?: string;
+  building_code?: string;
   unit_type?: UnitType;
 }

@@ -46,7 +46,7 @@ export function LeaseFormFields({
           <option value="">-- All / Filter by Building --</option>
           {buildings.map((b) => (
             <option key={b.id} value={b.id}>
-              {b.name}
+              {b.name} ({b.property_name || "Property"})
             </option>
           ))}
         </select>
@@ -72,7 +72,7 @@ export function LeaseFormFields({
           <option value="">Choose Unit</option>
           {availableUnits.map((u) => (
             <option key={u.id} value={u.id}>
-              Unit {u.unit_number} ({u.building?.name || "Building"})
+              Unit {u.unit_number} ({u.building_name || "Building"})
             </option>
           ))}
         </select>
