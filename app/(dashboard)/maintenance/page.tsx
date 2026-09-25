@@ -260,7 +260,7 @@ export default function MaintenancePage() {
             No maintenance requests found.
           </div>
         ) : (
-          <table className="w-full min-w-[680px] text-left text-xs text-slate-600">
+          <table className="w-full min-w-170 text-left text-xs text-slate-600">
             <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
               <tr>
                 <th className="p-3">Title & Description</th>

@@ -85,6 +85,13 @@ export async function clearClientData() {
 }
 
 // Client for general rental API endpoints.
+async function handleUnauthorizedResponse() {
+  if (typeof window === "undefined") return;
+
+  await logoutUser(false);
+  window.location.replace("/login");
+}
+
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -118,8 +125,7 @@ export async function apiFetch<T>(
 
   if (!response.ok || !result?.success) {
     if (response.status === 401 && typeof window !== "undefined") {
-      await clearClientData();
-      window.location.replace("/login");
+      await handleUnauthorizedResponse();
     }
     throw new Error(
       result?.message ||

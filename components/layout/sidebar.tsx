@@ -63,7 +63,7 @@ export function Sidebar({
         aria-label="Main navigation"
         className={`fixed inset-y-0 left-0 z-50 flex w-[min(84vw,18rem)] flex-col border-r border-slate-800 bg-slate-950 text-slate-300 shadow-2xl transition-[width,transform] duration-200 ease-out lg:static lg:z-auto lg:translate-x-0 lg:shadow-none ${
           collapsed ? "lg:w-20" : "lg:w-64"
-        } ${open ? "translate-x-0" : "-translate-x-full"}`}
+        } ${open ? "translate-x-0" : "-translate-x-full hidden lg:block"}`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800 px-5 sm:px-6">
           <Link
@@ -99,7 +99,9 @@ export function Sidebar({
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5 sm:px-4">
           <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 lg:text-center">
-            Workspace
+            <span className={collapsed ? "lg:hidden" : "truncate"}>
+              Workspace
+            </span>
           </p>
           <div className="space-y-1">
             {navItems.map((item) => {
@@ -138,7 +140,9 @@ export function Sidebar({
             }`}
           >
             <UserRound className="h-4 w-4" />
-            <span>Property workspace</span>
+            <span className={collapsed ? "lg:hidden" : "truncate"}>
+              Property workspace
+            </span>
           </div>
           <button
             type="button"
@@ -146,7 +150,9 @@ export function Sidebar({
             className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-950/40 hover:text-rose-300"
           >
             <LogOut className="h-4.5 w-4.5" />
-            Sign out
+            <span className={collapsed ? "lg:hidden" : "truncate"}>
+              Sign out
+            </span>
           </button>
         </div>
       </aside>

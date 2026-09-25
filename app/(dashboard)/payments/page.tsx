@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api_client";
 import { Payment } from "@/types/payment";
@@ -86,7 +86,7 @@ export default function PaymentsPage() {
             Loading payments...
           </div>
         ) : (
-          <table className="w-full min-w-[640px] text-left text-xs">
+          <table className="w-full min-w-160 text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
               <tr>
                 <th className="p-3">Payment No.</th>
