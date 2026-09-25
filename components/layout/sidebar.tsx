@@ -26,7 +26,7 @@ const navItems = [
   { name: "Leases", href: "/leases", icon: ClipboardList },
   { name: "Billing & Invoices", href: "/billing", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
-  { name: "Maintenance", href: "/maintenance", icon: Wrench },
+  // { name: "Maintenance", href: "/maintenance", icon: Wrench },
   { name: "Expenses", href: "/expenses", icon: Receipt },
 ];
 
