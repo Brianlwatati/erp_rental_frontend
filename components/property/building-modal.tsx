@@ -113,7 +113,7 @@ export function BuildingModal({
       if (building) {
         // Edit existing building
         await apiFetch(`/buildings/${building.id}`, {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify(payload),
         });
       } else {
