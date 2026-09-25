@@ -166,7 +166,7 @@ export function UnitModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="lg:fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 border border-slate-200">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-slate-900">
