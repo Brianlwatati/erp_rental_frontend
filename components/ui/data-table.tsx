@@ -21,11 +21,14 @@ export function DataTable<T extends { id: string | number }>({
   return (
     <div className="w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="table-scroll">
-        <table className="w-full min-w-[680px] text-left text-sm text-slate-600">
+        <table className="w-full min-w-170 text-left text-sm text-slate-600">
           <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
               {columns.map((col, index) => (
-                <th key={index} className="whitespace-nowrap px-4 py-3.5 sm:px-6">
+                <th
+                  key={index}
+                  className="whitespace-nowrap px-4 py-3.5 sm:px-6"
+                >
                   {col.header}
                 </th>
               ))}

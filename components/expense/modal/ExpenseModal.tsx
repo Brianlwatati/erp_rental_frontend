@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api_client";
-import { Expense, ExpenseCategory } from "@/types/expense";
+import { Expense, ExpenseCategory, ExpenseCreateSchema } from "@/types/expense";
 import { Vendor } from "./VendorModal";
 
 interface OptionItem {
@@ -33,7 +33,7 @@ export function ExpenseModal({
   buildings = [],
   units = [],
 }: ExpenseModalProps) {
-  const [formData, setFormData] = useState<Partial<Expense>>({
+  const [formData, setFormData] = useState<Partial<ExpenseCreateSchema>>({
     description: "",
     amount: 0,
     expenseDate: new Date().toISOString().split("T")[0],
@@ -56,18 +56,18 @@ export function ExpenseModal({
       setFormData({
         description: expense.description || "",
         amount: expense.amount || 0,
-        expenseDate: expense.expenseDate
-          ? new Date(expense.expenseDate).toISOString().split("T")[0]
+        expenseDate: expense.expense_date
+          ? new Date(expense.expense_date).toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0],
-        paymentMethod: expense.paymentMethod || "BANK",
+        paymentMethod: expense.payment_method || "BANK",
         status: expense.status || "POSTED",
-        expenseNumber: expense.expenseNumber || "",
-        referenceNumber: expense.referenceNumber || "",
-        expenseCategoryId: expense.expenseCategoryId || "",
-        vendorId: expense.vendorId || "",
-        propertyId: expense.propertyId || "",
-        buildingId: expense.buildingId || "",
-        unitId: expense.unitId || "",
+        expenseNumber: expense.expense_number || "",
+        referenceNumber: expense.reference_number || "",
+        expenseCategoryId: expense.expense_category_id || "",
+        vendorId: expense.vendor_id || "",
+        propertyId: expense.property_id || "",
+        buildingId: expense.building_id || "",
+        unitId: expense.unit_id || "",
       });
     } else {
       // Auto-generate expense number draft placeholder

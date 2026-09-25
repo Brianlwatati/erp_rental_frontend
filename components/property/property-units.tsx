@@ -83,7 +83,7 @@ export function PropertyUnitsTab({
       header: "Building",
       accessor: (row) => (
         <span className="font-medium text-slate-700">
-          {row.building?.name || "—"}
+          {row.building_name || "—"}
         </span>
       ),
     },

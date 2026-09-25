@@ -45,7 +45,7 @@ export function ExpenseTable({
       header: "Method",
       accessor: (expense) => (
         <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-semibold">
-          {expense.paymentMethod || "N/A"}
+          {expense.payment_method || "N/A"}
         </span>
       ),
     },
@@ -53,7 +53,7 @@ export function ExpenseTable({
       header: "Ref Code",
       accessor: (expense) => (
         <span className="font-mono text-slate-500">
-          {expense.referenceNumber || "—"}
+          {expense.reference_number || "—"}
         </span>
       ),
     },

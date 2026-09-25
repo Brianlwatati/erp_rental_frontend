@@ -128,7 +128,7 @@ export default function MaintenancePage() {
   }));
   const expenseOptions = expenses.map((expense) => ({
     id: expense.id,
-    name: `${expense.expenseNumber} - ${expense.description}`,
+    name: `${expense.expense_number} - ${expense.description}`,
   }));
 
   const requestForModal = selectedRequest

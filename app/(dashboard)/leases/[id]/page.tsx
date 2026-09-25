@@ -181,13 +181,13 @@ export default function LeaseDetailPage() {
             <p className="text-xs text-slate-500">
               Assigned to{" "}
               <strong className="text-slate-800">
-                {lease.tenant
-                  ? `${lease.tenant.first_name} ${lease.tenant.last_name}`
+                {lease.tenant_first_name && lease.tenant_last_name
+                  ? `${lease.tenant_first_name} ${lease.tenant_last_name}`
                   : "Tenant"}
               </strong>{" "}
               in Unit{" "}
               <strong className="text-slate-800">
-                {lease.unit?.unit_number || "Unit"}
+                {lease.unit_number || "Unit"}
               </strong>
             </p>
           </div>
