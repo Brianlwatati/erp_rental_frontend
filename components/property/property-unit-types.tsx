@@ -31,6 +31,8 @@ export function PropertyUnitTypesTab() {
   }, [fetchUnitTypes]);
 
   const handleEdit = (unitType: UnitType) => {
+    if (unitType.company_id === "default") return;
+
     setSelectedUnitType(unitType);
     setIsModalOpen(true);
   };
@@ -76,7 +78,8 @@ export function PropertyUnitTypesTab() {
       accessor: (row) => (
         <button
           onClick={() => handleEdit(row)}
-          className="text-xs font-semibold text-blue-600 hover:underline"
+          disabled={row.company_id === "default"}
+          className="text-xs font-semibold text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
         >
           Edit
         </button>
