@@ -153,8 +153,8 @@ export function InvoiceModal({
           dueDate: invoice.due_date?.split("T")[0] || "",
           periodStart: invoice.period_start?.split("T")[0] || "",
           periodEnd: invoice.period_end?.split("T")[0] || "",
-          discount: invoice.discount || 0,
-          tax: invoice.tax || 0,
+          discount: Number(invoice.discount) || 0,
+          tax: Number(invoice.tax) || 0,
           notes: invoice.notes || "",
         });
 
@@ -346,8 +346,8 @@ export function InvoiceModal({
                 <option value="">Choose Active Lease</option>
                 {leases.map((l) => (
                   <option key={l.id} value={l.id}>
-                    Unit {l.unit?.unit_number} - {l.tenant?.first_name}{" "}
-                    {l.tenant?.last_name}
+                    Unit {l.unit_number} - {l.building_name}:{" "}
+                    {l.tenant_first_name} {l.tenant_last_name}
                   </option>
                 ))}
               </select>

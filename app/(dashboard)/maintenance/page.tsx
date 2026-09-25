@@ -62,7 +62,6 @@ export default function MaintenancePage() {
         requestRes,
         propertyRes,
         buildingRes,
-        unitRes,
         tenantRes,
         vendorRes,
         expenseRes,
@@ -70,7 +69,6 @@ export default function MaintenancePage() {
         apiFetch<MaintenanceRequest[]>("/maintenance-requests"),
         apiFetch<Property[]>("/properties"),
         apiFetch<Building[]>("/buildings/all").catch(() => ({ data: [] })),
-        apiFetch<Unit[]>("/units/all").catch(() => ({ data: [] })),
         apiFetch<Tenant[]>("/tenants"),
         apiFetch<Vendor[]>("/rental-vendors"),
         apiFetch<Expense[]>("/expenses"),
@@ -79,7 +77,6 @@ export default function MaintenancePage() {
       setRequests(requestRes.data || []);
       setProperties(propertyRes.data || []);
       setBuildings(buildingRes.data || []);
-      setUnits(unitRes.data || []);
       setTenants(tenantRes.data || []);
       setVendors(vendorRes.data || []);
       setExpenses(expenseRes.data || []);

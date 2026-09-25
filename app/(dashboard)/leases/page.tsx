@@ -54,10 +54,10 @@ export default function LeasesPage() {
   };
 
   const filteredLeases = leases.filter((lease) => {
-    const tenantName = lease.tenant
-      ? `${lease.tenant.first_name} ${lease.tenant.last_name}`
-      : "";
-    const unitNo = lease.unit?.unit_number || "";
+    const tenantName = `${lease.tenant_first_name || ""} ${
+      lease.tenant_last_name || ""
+    }`.trim();
+    const unitNo = lease.unit_number || "";
     const leaseNo = lease.lease_number || "";
 
     const matchesSearch =
@@ -93,10 +93,14 @@ export default function LeasesPage() {
       accessor: (row) => (
         <div>
           <span className="font-semibold text-slate-800 block">
-            Unit {row.unit?.unit_number || row.unit_id.slice(0, 6)}
+            Unit {row.unit_number || row.unit_id.slice(0, 6)}
           </span>
           <span className="text-xs text-slate-500">
-            {row.unit?.building?.name || "—"}
+            {row.building_name || "—"}
+          </span>
+          <span className="text-[11px] text-slate-400">
+            {" "}
+            {row.property_name || "—"}
           </span>
         </div>
       ),
@@ -106,13 +110,20 @@ export default function LeasesPage() {
       accessor: (row) => (
         <div>
           <span className="font-medium text-slate-800 block">
-            {row.tenant
-              ? `${row.tenant.first_name} ${row.tenant.last_name}`
+            {row.tenant_first_name || row.tenant_last_name
+              ? `${row.tenant_first_name || ""} ${row.tenant_last_name || ""}`
               : "—"}
           </span>
-          <span className="text-xs text-slate-500">
-            {row.tenant?.phone || row.tenant?.email || ""}
-          </span>
+          {/* {(row.tenant_phone) && (
+            <span className="text-xs text-slate-500 block">
+              {row.tenant_phone}
+            </span>
+          )} */}
+          {row.tenant_email && (
+            <span className="text-xs text-slate-500 block">
+              {row.tenant_email}
+            </span>
+          )}
         </div>
       ),
     },

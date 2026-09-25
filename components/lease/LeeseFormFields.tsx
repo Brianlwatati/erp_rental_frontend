@@ -11,8 +11,10 @@ interface FormFieldsProps {
   availableUnits: Unit[];
   tenants: Tenant[];
   selectedBuildingId: string;
+  tenantLocked: boolean;
   onBuildingChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onUnitChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onTenantChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onChange: (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -27,8 +29,10 @@ export function LeaseFormFields({
   availableUnits,
   tenants,
   selectedBuildingId,
+  tenantLocked,
   onBuildingChange,
   onUnitChange,
+  onTenantChange,
   onChange,
 }: FormFieldsProps) {
   return (
@@ -93,10 +97,11 @@ export function LeaseFormFields({
           id="tenantId"
           name="tenantId"
           value={formData.tenantId}
-          onChange={onChange}
+          onChange={onTenantChange}
+          disabled={tenantLocked}
           className={`w-full px-3 py-2 border rounded-lg text-xs bg-white ${
             errors.tenantId ? "border-rose-300" : "border-slate-300"
-          }`}
+          } ${tenantLocked ? "cursor-not-allowed bg-slate-100 text-slate-500" : ""}`}
         >
           <option value="">Choose Tenant</option>
           {tenants.map((t) => (

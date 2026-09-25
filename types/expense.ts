@@ -26,10 +26,10 @@ export interface Expense {
   unitId?: string;
   expenseCategoryId?: string;
   vendorId?: string;
-  expenseNumber: string;
+  expense_number: string;
   description: string;
   amount: number;
-  expenseDate: string;
+  expense_date: string;
   paymentMethod?: "CASH" | "BANK" | "MPESA" | "CARD" | "CHEQUE" | "OTHER";
   referenceNumber?: string;
   status: "DRAFT" | "POSTED" | "CANCELLED";

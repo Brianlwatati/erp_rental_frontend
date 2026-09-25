@@ -7,7 +7,17 @@ export interface Lease {
   id: string;
   company_id: string;
   unit_id: string;
+  unit_number: string;
+  building_id: string;
+  building_name: string;
+  building_code: string;
+  property_name: string;
+  property_code: string;
   tenant_id: string;
+  tenant_first_name: string;
+  tenant_last_name: string;
+  tenant_email: string;
+  tenant_phone: string;
   lease_number: string;
   start_date: string;
   end_date?: string | null;
@@ -20,9 +30,6 @@ export interface Lease {
   notes?: string | null;
   created_at: string;
   updated_at: string;
-  // Joined properties
-  unit?: Unit;
-  tenant?: Tenant;
 }
 
 export interface LeaseCharge {

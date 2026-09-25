@@ -49,7 +49,17 @@ export function LeaseModal({
 
   const [formData, setFormData] = useState({
     unitId: "",
+    unitNumber: "",
+    buildingId: "",
+    buildingName: "",
+    buildingCode: "",
+    propertyName: "",
+    propertyCode: "",
     tenantId: "",
+    tenantFirstName: "",
+    tenantLastName: "",
+    tenantEmail: "",
+    tenantPhone: "",
     leaseNumber: "",
     startDate: "",
     endDate: "",
@@ -68,10 +78,20 @@ export function LeaseModal({
   useEffect(() => {
     if (isOpen) {
       if (lease) {
-        setSelectedBuildingId(lease.unit?.building?.id || "");
+        setSelectedBuildingId(lease.building_id || "");
         setFormData({
           unitId: lease.unit_id || "",
+          unitNumber: lease.unit_number || "",
+          buildingId: lease.building_id || "",
+          buildingName: lease.building_name || "",
+          buildingCode: lease.building_code || "",
+          propertyName: lease.property_name || "",
+          propertyCode: lease.property_code || "",
           tenantId: lease.tenant_id || "",
+          tenantFirstName: lease.tenant_first_name || "",
+          tenantLastName: lease.tenant_last_name || "",
+          tenantEmail: lease.tenant_email || "",
+          tenantPhone: lease.tenant_phone || "",
           leaseNumber: lease.lease_number || "",
           startDate: lease.start_date ? lease.start_date.split("T")[0] : "",
           endDate: lease.end_date ? lease.end_date.split("T")[0] : "",
@@ -86,7 +106,17 @@ export function LeaseModal({
         setUnits([]);
         setFormData({
           unitId: "",
+          unitNumber: "",
+          buildingId: "",
+          buildingName: "",
+          buildingCode: "",
+          propertyName: "",
+          propertyCode: "",
           tenantId: "",
+          tenantFirstName: "",
+          tenantLastName: "",
+          tenantEmail: "",
+          tenantPhone: "",
           leaseNumber: "",
           startDate: "",
           endDate: "",
@@ -144,11 +174,20 @@ export function LeaseModal({
 
   const handleBuildingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const buildingId = e.target.value;
+    const selectedBuilding = buildings.find(
+      (building) => building.id === buildingId,
+    );
+
     setSelectedBuildingId(buildingId);
-    // Reset unit selection when changing building
     setFormData((prev) => ({
       ...prev,
       unitId: "",
+      unitNumber: "",
+      buildingId,
+      buildingName: selectedBuilding?.name || "",
+      buildingCode: selectedBuilding?.code || "",
+      propertyName: selectedBuilding?.property_name || "",
+      propertyCode: selectedBuilding?.property_code || "",
       monthlyRent: "",
       depositAmount: 0,
     }));
@@ -161,12 +200,33 @@ export function LeaseModal({
     setFormData((prev) => ({
       ...prev,
       unitId,
+      unitNumber: selectedUnit?.unit_number || "",
       monthlyRent: selectedUnit?.monthly_rent ?? prev.monthlyRent,
       depositAmount: selectedUnit?.deposit_amount ?? prev.depositAmount,
     }));
 
     if (errors.unitId) {
       setErrors((prev) => ({ ...prev, unitId: "" }));
+    }
+  };
+
+  const handleTenantChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (lease) return;
+
+    const tenantId = e.target.value;
+    const selectedTenant = tenants.find((tenant) => tenant.id === tenantId);
+
+    setFormData((prev) => ({
+      ...prev,
+      tenantId,
+      tenantFirstName: selectedTenant?.first_name || "",
+      tenantLastName: selectedTenant?.last_name || "",
+      tenantEmail: selectedTenant?.email || "",
+      tenantPhone: selectedTenant?.phone || "",
+    }));
+
+    if (errors.tenantId) {
+      setErrors((prev) => ({ ...prev, tenantId: "" }));
     }
   };
 
@@ -204,7 +264,17 @@ export function LeaseModal({
     try {
       const payload = {
         unitId: validation.data.unitId,
+        unitNumber: formData.unitNumber,
+        buildingId: formData.buildingId,
+        buildingName: formData.buildingName,
+        buildingCode: formData.buildingCode,
+        propertyName: formData.propertyName,
+        propertyCode: formData.propertyCode,
         tenantId: validation.data.tenantId,
+        tenantFirstName: formData.tenantFirstName,
+        tenantLastName: formData.tenantLastName,
+        tenantEmail: formData.tenantEmail,
+        tenantPhone: formData.tenantPhone,
         ...(validation.data.leaseNumber && {
           leaseNumber: validation.data.leaseNumber,
         }),
@@ -271,8 +341,10 @@ export function LeaseModal({
             // unitsLoading={unitsLoading}
             tenants={tenants}
             selectedBuildingId={selectedBuildingId}
+            tenantLocked={Boolean(lease)}
             onBuildingChange={handleBuildingChange}
             onUnitChange={handleUnitSelect}
+            onTenantChange={handleTenantChange}
             onChange={handleChange}
           />
 
