@@ -110,7 +110,7 @@ export function MaintenanceCostModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4 sm:items-center">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
