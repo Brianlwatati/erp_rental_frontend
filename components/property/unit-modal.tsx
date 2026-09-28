@@ -13,7 +13,7 @@ const unitFormSchema = z.object({
   floor: z.preprocess(
     (val) =>
       val === "" || val === null || val === undefined ? undefined : Number(val),
-    z.number().optional(),
+    z.number().int().min(0, "Floor must be 0 or greater").optional(),
   ),
   monthlyRent: z.preprocess(
     (val) => (val === "" || val === null ? undefined : Number(val)),
@@ -66,6 +66,10 @@ export function UnitModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const selectedBuilding = buildings.find(
+    (building) => building.id === formData.buildingId,
+  );
 
   useEffect(() => {
     if (unit) {
@@ -124,6 +128,18 @@ export function UnitModal({
         }
       });
       setErrors(fieldErrors);
+      setLoading(false);
+      return;
+    }
+
+    if (
+      validation.data.floor !== undefined &&
+      selectedBuilding?.floors !== undefined &&
+      validation.data.floor >= selectedBuilding.floors
+    ) {
+      setErrors({
+        floor: `Floor must be between 0 and ${selectedBuilding.floors - 1}.`,
+      });
       setLoading(false);
       return;
     }
@@ -281,11 +297,26 @@ export function UnitModal({
                 id="floor"
                 name="floor"
                 type="number"
+                min={0}
+                max={
+                  selectedBuilding?.floors !== undefined
+                    ? selectedBuilding.floors - 1
+                    : undefined
+                }
+                step={1}
                 placeholder="e.g. 1"
                 value={formData.floor}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
               />
+              {formData.floor !== "" && Number(formData.floor) === 0 && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Note: Floor 0 typically represents the ground floor
+                </p>
+              )}
+              {errors.floor && (
+                <p className="mt-1 text-xs text-rose-600">{errors.floor}</p>
+              )}
             </div>
 
             {/* Status */}

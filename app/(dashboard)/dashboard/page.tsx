@@ -154,7 +154,23 @@ export default function OverviewPage() {
       </div>
 
       {/* Grid Row 2: Financial Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Due */}
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Total Due
+          </p>
+          <p className="text-2xl font-extrabold text-rose-600 mt-1">
+            KES{" "}
+            {(data.totalDue || 0).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })}
+          </p>
+          <p className="text-[11px] text-slate-500 mt-2">
+            Outstanding rental payments
+          </p>
+        </div>
+
         {/* Revenue */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">

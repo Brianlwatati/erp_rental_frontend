@@ -116,6 +116,12 @@ export default function TenantsPage() {
       accessor: (row) => (
         <div className="flex items-center gap-3">
           <Link
+            href={`/tenants/${row.id}`}
+            className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
+          >
+            Details
+          </Link>
+          <Link
             href={`/tenants/${row.id}/documents`}
             className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
           >
