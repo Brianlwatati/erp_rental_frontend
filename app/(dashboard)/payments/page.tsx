@@ -43,10 +43,10 @@ export default function PaymentsPage() {
 
           return {
             ...invoice,
-            tenantId: invoice.tenantId || apiInvoice.tenant_id || "",
+            tenantId: invoice.tenant_id || apiInvoice.tenant_id || "",
             invoiceNumber:
-              invoice.invoiceNumber || apiInvoice.invoice_number || "",
-            dueDate: invoice.dueDate || apiInvoice.due_date || "",
+              invoice.invoice_number || apiInvoice.invoice_number || "",
+            dueDate: invoice.due_date || apiInvoice.due_date || "",
           };
         }),
       );

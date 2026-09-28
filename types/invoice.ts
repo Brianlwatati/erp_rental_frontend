@@ -33,6 +33,34 @@ export interface InvoiceItem {
 
 export interface Invoice {
   id: string;
+  company_id?: string;
+  tenant_id: string;
+  lease_id: string;
+  invoice_number?: string;
+  invoice_date?: string;
+  due_date: string;
+  period_start: string;
+  period_end: string;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  amount_paid: number;
+  balance: number;
+  status:
+    | "DRAFT"
+    | "ISSUED"
+    | "PARTIALLY_PAID"
+    | "PAID"
+    | "OVERDUE"
+    | "CANCELLED";
+  notes?: string;
+  items?: InvoiceItem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface InvoiceCreateSchema {
   companyId?: string;
   tenantId: string;
   leaseId: string;

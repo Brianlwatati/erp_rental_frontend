@@ -12,6 +12,7 @@ export interface OverviewData {
   totalTenants: number;
   totalRevenue: number;
   totalExpenses: number;
+  totalDue: number;
   netIncome?: number;
   pendingMaintenance?: number;
 }

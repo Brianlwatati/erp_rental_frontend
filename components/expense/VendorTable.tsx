@@ -12,7 +12,7 @@ export function VendorTable({ vendors, searchTerm, onEdit }: VendorTableProps) {
   const filteredVendors = vendors.filter(
     (vendor) =>
       vendor.name.toLowerCase().includes(normalizedSearch) ||
-      (vendor.serviceType || "").toLowerCase().includes(normalizedSearch),
+      (vendor.service_type || "").toLowerCase().includes(normalizedSearch),
   );
 
   const columns: Column<Vendor>[] = [
@@ -26,13 +26,13 @@ export function VendorTable({ vendors, searchTerm, onEdit }: VendorTableProps) {
       header: "Service Type",
       accessor: (vendor) => (
         <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-medium rounded text-[10px]">
-          {vendor.serviceType || "General"}
+          {vendor.service_type || "General"}
         </span>
       ),
     },
     {
       header: "Contact Person",
-      accessor: (vendor) => vendor.contactPerson || "—",
+      accessor: (vendor) => vendor.contact_person || "—",
     },
     {
       header: "Phone",

@@ -2,17 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api_client";
-
-export interface Vendor {
-  id?: string;
-  name: string;
-  contactPerson?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  serviceType?: string;
-  status?: "ACTIVE" | "INACTIVE";
-}
+import { Vendor, VendorCreateSchema } from "@/types/expense";
 
 interface VendorModalProps {
   isOpen: boolean;
@@ -27,7 +17,7 @@ export function VendorModal({
   onSuccess,
   vendor,
 }: VendorModalProps) {
-  const [formData, setFormData] = useState<Partial<Vendor>>({
+  const [formData, setFormData] = useState<Partial<VendorCreateSchema>>({
     name: "",
     contactPerson: "",
     phone: "",
@@ -43,11 +33,11 @@ export function VendorModal({
     if (vendor) {
       setFormData({
         name: vendor.name || "",
-        contactPerson: vendor.contactPerson || "",
+        contactPerson: vendor.contact_person || "",
         phone: vendor.phone || "",
         email: vendor.email || "",
         address: vendor.address || "",
-        serviceType: vendor.serviceType || "",
+        serviceType: vendor.service_type || "",
         status: vendor.status || "ACTIVE",
       });
     } else {

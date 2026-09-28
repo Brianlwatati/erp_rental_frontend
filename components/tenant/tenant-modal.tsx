@@ -141,7 +141,7 @@ export function TenantModal({
 
       if (tenant) {
         await apiFetch(`/tenants/${tenant.id}`, {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify(payload),
         });
       } else {

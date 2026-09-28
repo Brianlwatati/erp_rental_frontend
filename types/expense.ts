@@ -7,14 +7,25 @@ export interface ExpenseCategory {
   status: "ACTIVE" | "INACTIVE";
 }
 
-export interface Vendor {
-  id: string;
+export interface VendorCreateSchema {
   name: string;
   contactPerson?: string;
   phone?: string;
   email?: string;
   address?: string;
   serviceType?: string;
+  status: "ACTIVE" | "INACTIVE";
+  created_at?: string;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  service_type?: string;
   status: "ACTIVE" | "INACTIVE";
   created_at?: string;
 }

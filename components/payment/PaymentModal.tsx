@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { paymentCreateSchema, PaymentCreateInput } from "@/types/payment";
 import { apiFetch } from "@/lib/api_client";
 import { Tenant } from "@/types/tenant";
-import { Invoice } from "@/types/invoice";
+import { Invoice, InvoiceCreateSchema } from "@/types/invoice";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -46,36 +46,39 @@ export function PaymentModal({
   // Filter open invoices for selected tenant
   const tenantInvoices = useMemo(() => {
     if (!formData.tenantId) return [];
-    console.log("Filtering invoices for tenant:", formData.tenantId);
-    return unpaidInvoices.filter((inv) => inv.tenantId === formData.tenantId);
+    return unpaidInvoices.filter((inv) => inv.tenant_id === formData.tenantId);
   }, [formData.tenantId, unpaidInvoices]);
 
   useEffect(() => {
     if (isOpen) {
-      const initialTenant = preselectedTenantId || "";
+      const preselectedInvoice = preselectedInvoiceId
+        ? unpaidInvoices.find((invoice) => invoice.id === preselectedInvoiceId)
+        : undefined;
+      const initialTenant =
+        preselectedInvoice?.tenant_id ?? preselectedTenantId ?? "";
+      const initialInvoices = preselectedInvoice
+        ? [preselectedInvoice]
+        : unpaidInvoices.filter(
+            (invoice) => invoice.tenant_id === initialTenant,
+          );
       setFormData({
         tenantId: initialTenant,
         paymentNumber: "",
         paymentDate: new Date().toISOString().split("T")[0],
-        amount: 0,
+        amount: initialInvoices.reduce(
+          (sum, invoice) => sum + Number(invoice.balance),
+          0,
+        ),
         paymentMethod: "MPESA",
         referenceNumber: "",
         notes: "",
       });
-
-      if (preselectedInvoiceId) {
-        const inv = unpaidInvoices.find((i) => i.id === preselectedInvoiceId);
-        if (inv) {
-          setFormData((prev) => ({
-            ...prev,
-            tenantId: inv.tenantId,
-            amount: inv.balance,
-          }));
-          setAllocations([{ invoiceId: inv.id, amount: inv.balance }]);
-        }
-      } else {
-        setAllocations([]);
-      }
+      setAllocations(
+        initialInvoices.map((invoice) => ({
+          invoiceId: invoice.id,
+          amount: Number(invoice.balance),
+        })),
+      );
       setErrors({});
       setServerError(null);
     }
@@ -83,8 +86,20 @@ export function PaymentModal({
 
   const handleTenantChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const tenantId = e.target.value;
-    setFormData((prev) => ({ ...prev, tenantId }));
-    setAllocations([]); // Reset allocations when tenant changes
+    const invoices = unpaidInvoices.filter(
+      (invoice) => invoice.tenant_id === tenantId,
+    );
+    const totalBalance = invoices.reduce(
+      (sum, invoice) => sum + Number(invoice.balance),
+      0,
+    );
+    setFormData((prev) => ({ ...prev, tenantId, amount: totalBalance }));
+    setAllocations(
+      invoices.map((invoice) => ({
+        invoiceId: invoice.id,
+        amount: Number(invoice.balance),
+      })),
+    );
   };
 
   const handleAllocationChange = (
@@ -311,18 +326,18 @@ export function PaymentModal({
                     >
                       <div>
                         <span className="font-semibold text-slate-800">
-                          {inv.invoiceNumber}
+                          {inv.invoice_number || "—"}
                         </span>
                         <p className="text-[10px] text-slate-500">
-                          Due: {inv.dueDate} | Balance: KES{" "}
-                          {inv.balance.toLocaleString()}
+                          Due: {inv.due_date} | Balance: KES{" "}
+                          {Number(inv.balance).toLocaleString()}
                         </p>
                       </div>
                       <div className="w-32">
                         <input
                           type="number"
                           placeholder="0.00"
-                          max={inv.balance}
+                          max={Number(inv.balance)}
                           value={currentAlloc || ""}
                           onChange={(e) =>
                             handleAllocationChange(
