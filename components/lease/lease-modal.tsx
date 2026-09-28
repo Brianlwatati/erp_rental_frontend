@@ -173,6 +173,7 @@ export function LeaseModal({
   }, [selectedBuildingId, isOpen]);
 
   const handleBuildingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // console.log("Selected building ID:", e.target.value);
     const buildingId = e.target.value;
     const selectedBuilding = buildings.find(
       (building) => building.id === buildingId,

@@ -2,8 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api_client";
-import { Expense, ExpenseCategory, ExpenseCreateSchema } from "@/types/expense";
-import { Vendor } from "./VendorModal";
+import {
+  Expense,
+  ExpenseCategory,
+  ExpenseCreateSchema,
+  Vendor,
+} from "@/types/expense";
 
 interface OptionItem {
   id: string;
