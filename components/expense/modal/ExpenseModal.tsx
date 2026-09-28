@@ -8,6 +8,7 @@ import {
   ExpenseCreateSchema,
   Vendor,
 } from "@/types/expense";
+import { Building, Property, Unit } from "@/types/property";
 
 interface OptionItem {
   id: string;
@@ -21,7 +22,7 @@ interface ExpenseModalProps {
   expense?: Expense | null;
   categories: ExpenseCategory[];
   vendors: Vendor[];
-  properties?: OptionItem[];
+  properties?: Property[];
   buildings?: OptionItem[];
   units?: OptionItem[];
 }
@@ -54,6 +55,11 @@ export function ExpenseModal({
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [buildingOptions, setBuildingOptions] =
+    useState<OptionItem[]>(buildings);
+  const [unitOptions, setUnitOptions] = useState<OptionItem[]>(units);
+  const [buildingsLoading, setBuildingsLoading] = useState(false);
+  const [unitsLoading, setUnitsLoading] = useState(false);
 
   useEffect(() => {
     if (expense) {
@@ -94,7 +100,103 @@ export function ExpenseModal({
     setError(null);
   }, [expense, isOpen, categories, vendors]);
 
+  useEffect(() => {
+    if (!isOpen || !formData.propertyId) {
+      setBuildingOptions([]);
+      setBuildingsLoading(false);
+      return;
+    }
+
+    let isCurrent = true;
+    setBuildingsLoading(true);
+    setBuildingOptions([]);
+
+    apiFetch<Building[]>(`/buildings/property/${formData.propertyId}`)
+      .then((response) => {
+        if (isCurrent) {
+          setBuildingOptions(
+            response.data.map((building) => ({
+              id: building.id,
+              name: building.name,
+            })),
+          );
+        }
+      })
+      .catch((err: unknown) => {
+        if (isCurrent) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load buildings.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setBuildingsLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [isOpen, formData.propertyId]);
+
+  useEffect(() => {
+    if (!isOpen || !formData.buildingId) {
+      setUnitOptions([]);
+      setUnitsLoading(false);
+      return;
+    }
+
+    let isCurrent = true;
+    setUnitsLoading(true);
+    setUnitOptions([]);
+
+    apiFetch<Unit[]>(`/units/building/${formData.buildingId}`)
+      .then((response) => {
+        if (isCurrent) {
+          setUnitOptions(
+            response.data.map((unit) => ({
+              id: unit.id,
+              name: unit.unit_number,
+            })),
+          );
+        }
+      })
+      .catch((err: unknown) => {
+        if (isCurrent) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load units.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setUnitsLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [isOpen, formData.buildingId]);
+
   if (!isOpen) return null;
+
+  const handlePropertyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const propertyId = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      propertyId,
+      buildingId: "",
+      unitId: "",
+    }));
+    setBuildingOptions([]);
+    setUnitOptions([]);
+    setError(null);
+  };
+
+  const handleBuildingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const buildingId = e.target.value;
+    setFormData((prev) => ({ ...prev, buildingId, unitId: "" }));
+    setUnitOptions([]);
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,48 +297,78 @@ export function ExpenseModal({
             </div>
           </div>
 
-          {/* Description & Amount */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Description <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Monthly Lift Servicing & Maintenance"
-                value={formData.description || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none"
-              />
-            </div>
+          {/* Optional Entity Allocation (Property / Building / Unit) */}
+          <div className="pt-2 border-t border-slate-100">
+            <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Allocation
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Property
+                </label>
+                <select
+                  value={formData.propertyId || ""}
+                  onChange={handlePropertyChange}
+                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white outline-none"
+                >
+                  <option value="">General Property</option>
+                  {properties.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Amount (KES) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                required
-                placeholder="0.00"
-                value={formData.amount || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    amount: parseFloat(e.target.value) || 0,
-                  })
-                }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold outline-none"
-              />
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Building
+                </label>
+                <select
+                  value={formData.buildingId || ""}
+                  onChange={handleBuildingChange}
+                  disabled={!formData.propertyId || buildingsLoading}
+                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white outline-none"
+                >
+                  <option value="">
+                    {buildingsLoading ? "Loading buildings..." : "N/A"}
+                  </option>
+                  {buildingOptions.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Unit
+                </label>
+                <select
+                  value={formData.unitId || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, unitId: e.target.value })
+                  }
+                  disabled={!formData.buildingId || unitsLoading}
+                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white outline-none"
+                >
+                  <option value="">
+                    {unitsLoading ? "Loading units..." : "N/A"}
+                  </option>
+                  {unitOptions.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Category & Vendor */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:py-1.5">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Category
@@ -278,6 +410,46 @@ export function ExpenseModal({
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Description & Amount */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-.5">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Description <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Monthly Lift Servicing & Maintenance"
+                value={formData.description || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Amount (KES) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                placeholder="0.00"
+                value={formData.amount || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    amount: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold outline-none"
+              />
             </div>
           </div>
 
@@ -339,74 +511,6 @@ export function ExpenseModal({
                 <option value="POSTED">POSTED</option>
                 <option value="CANCELLED">CANCELLED</option>
               </select>
-            </div>
-          </div>
-
-          {/* Optional Entity Allocation (Property / Building / Unit) */}
-          <div className="pt-2 border-t border-slate-100">
-            <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-              Allocation (Optional)
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">
-                  Property
-                </label>
-                <select
-                  value={formData.propertyId || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, propertyId: e.target.value })
-                  }
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white outline-none"
-                >
-                  <option value="">General Property</option>
-                  {properties.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">
-                  Building
-                </label>
-                <select
-                  value={formData.buildingId || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, buildingId: e.target.value })
-                  }
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white outline-none"
-                >
-                  <option value="">N/A</option>
-                  {buildings.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">
-                  Unit
-                </label>
-                <select
-                  value={formData.unitId || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, unitId: e.target.value })
-                  }
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white outline-none"
-                >
-                  <option value="">N/A</option>
-                  {units.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
           </div>
 

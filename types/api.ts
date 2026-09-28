@@ -1,35 +1,3 @@
-export interface Property {
-  id: string;
-  company_id: string;
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  total_units: number;
-  created_at: string;
-}
-
-export interface Unit {
-  id: string;
-  property_id: string;
-  building_id?: string;
-  unit_number: string;
-  rent_amount: number;
-  status: "VACANT" | "OCCUPIED" | "MAINTENANCE";
-}
-
-export interface Lease {
-  id: string;
-  tenant_id: string;
-  unit_id: string;
-  start_date: string;
-  end_date: string;
-  rent_amount: number;
-  deposit_amount: number;
-  status: "ACTIVE" | "PENDING" | "TERMINATED" | "EXPIRED";
-}
-
 export interface MaintenanceTicket {
   id: string;
   property_id: string;

@@ -10,10 +10,12 @@ import { ExpenseCategoryTable } from "@/components/expense/ExpenseCategoryTable"
 import { ExpenseTable } from "@/components/expense/ExpenseTable";
 import { ExpenseTabs, ExpenseTab } from "@/components/expense/ExpenseTabs";
 import { VendorTable } from "@/components/expense/VendorTable";
+import { Property } from "@/types/property";
 
 export default function ExpensesPage() {
   const [activeTab, setActiveTab] = useState<ExpenseTab>("expenses");
 
+  const [properties, setProperties] = useState<Property[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -32,12 +34,14 @@ export default function ExpensesPage() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [expRes, catRes, venRes] = await Promise.all([
+      const [prpRes, expRes, catRes, venRes] = await Promise.all([
+        apiFetch<Property[]>("/properties"),
         apiFetch<Expense[]>("/expenses"),
         apiFetch<ExpenseCategory[]>("/expense-categories"),
         apiFetch<Vendor[]>("/rental-vendors"),
       ]);
 
+      setProperties(prpRes.data || []);
       setExpenses(expRes.data || []);
       setCategories(catRes.data || []);
       setVendors(venRes.data || []);
@@ -166,6 +170,7 @@ export default function ExpensesPage() {
         onSuccess={fetchAllData}
         expense={selectedExpense}
         categories={categories}
+        properties={properties}
         vendors={vendors}
       />
       <ExpenseCategoryModal

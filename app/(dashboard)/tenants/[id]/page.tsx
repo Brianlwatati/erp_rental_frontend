@@ -33,11 +33,10 @@ export default function TenantPage() {
     }
   }, [tenantId, fetchTenantDetails]);
 
-  // load unit ocuppied by the client
   // Load the lease of the client
   // load the invoices of the client
   // load the payments of the client
-  // Expenses of the client eg maintenance, repairs, etc
+  // Expenses of the client
 
   if (loading) {
     return (
