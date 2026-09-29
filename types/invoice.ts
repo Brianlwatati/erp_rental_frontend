@@ -25,8 +25,10 @@ export interface InvoiceItem {
   invoiceId?: string;
   description: string;
   itemType: string;
+  item_type?: string;
   quantity: number;
   unitPrice: number;
+  unit_price?: number;
   amount?: number;
   createdAt?: string;
 }
@@ -37,7 +39,7 @@ export interface Invoice {
   tenant_id: string;
   lease_id: string;
   invoice_number?: string;
-  invoice_date?: string;
+  invoice_date: string;
   due_date: string;
   period_start: string;
   period_end: string;
