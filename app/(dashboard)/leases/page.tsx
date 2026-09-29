@@ -8,7 +8,7 @@ import { Building, Unit } from "@/types/property";
 import { Tenant } from "@/types/tenant";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/badge";
-import { LeaseModal } from "@/components/lease/lease-modal";
+import { LeaseModal } from "@/components/lease/modals/lease-modal";
 
 export default function LeasesPage() {
   const [leases, setLeases] = useState<Lease[]>([]);
