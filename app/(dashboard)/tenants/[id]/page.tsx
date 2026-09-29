@@ -181,7 +181,7 @@ export default function TenantPage() {
       </div>
 
       {/* Tenant Profile Banner & Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1  gap-6">
         {/* Profile Card */}
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div>
@@ -228,55 +228,6 @@ export default function TenantPage() {
                 {tenant.emergency_contact_phone || "N/A"}
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* Financial Overview Cards */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Total Outstanding
-            </span>
-            <div className="my-2">
-              <p
-                className={`text-2xl font-black ${
-                  totalBalance > 0 ? "text-rose-600" : "text-emerald-600"
-                }`}
-              >
-                {formatCurrency(totalBalance)}
-              </p>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Unpaid balances across all invoices
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Total Paid to Date
-            </span>
-            <div className="my-2">
-              <p className="text-2xl font-black text-slate-900">
-                {formatCurrency(totalPaid)}
-              </p>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Total posted payment transactions
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Active Leases
-            </span>
-            <div className="my-2">
-              <p className="text-2xl font-black text-slate-900">
-                {activeLeases}
-              </p>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              {leases.length} total historical leases
-            </p>
           </div>
         </div>
       </div>
