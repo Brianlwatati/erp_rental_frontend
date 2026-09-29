@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { apiFetch } from "@/lib/api_client";
 import { Lease } from "@/types/lease";
 import { Tenant } from "@/types/tenant";
-import { InvoiceCreateInput } from "@/types/invoice";
+import { Invoice, InvoiceCreateInput } from "@/types/invoice";
 import { InvoiceItemFields, InvoiceItemInput } from "./InvoiceItemFields";
 
 type InvoiceValidationResult =
@@ -68,33 +68,6 @@ function validateInvoicePayload(
   return issues.length > 0
     ? { success: false, error: { issues } }
     : { success: true, data: payload };
-}
-
-export interface Invoice {
-  id: string;
-  company_id?: string;
-  tenant_id: string;
-  lease_id: string;
-  invoice_number: string;
-  invoice_date: string;
-  due_date: string;
-  period_start: string;
-  period_end: string;
-  subtotal: number;
-  discount: number;
-  tax: number;
-  total: number;
-  amount_paid: number;
-  balance: number;
-  status:
-    | "DRAFT"
-    | "ISSUED"
-    | "PARTIALLY_PAID"
-    | "PAID"
-    | "OVERDUE"
-    | "CANCELLED";
-  notes?: string;
-  items?: InvoiceItemInput[];
 }
 
 interface InvoiceModalProps {
