@@ -155,6 +155,12 @@ export default function LeasesPage() {
       accessor: (row) => (
         <div className="flex items-center gap-3">
           <Link
+            href={`/leases/${row.id}/print`}
+            className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
+          >
+            Print
+          </Link>
+          <Link
             href={`/leases/${row.id}`}
             className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
           >
@@ -228,6 +234,7 @@ export default function LeasesPage() {
       {isModalOpen && (
         <LeaseModal
           lease={selectedLease}
+          leases={leases}
           buildings={buildings}
           tenants={tenants}
           isOpen={isModalOpen}

@@ -75,7 +75,7 @@ export function LeaseFormFields({
         >
           <option value="">Choose Unit</option>
           {availableUnits.map((u) => (
-            <option key={u.id} value={u.id}>
+            <option key={u.id} value={u.id} disabled={u.status !== "VACANT"}>
               Unit {u.unit_number} ({u.building_name || "Building"})
             </option>
           ))}

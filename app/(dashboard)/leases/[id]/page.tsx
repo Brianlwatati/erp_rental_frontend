@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api_client";
 import { Lease, LeaseCharge } from "@/types/lease";
 import { StatusBadge } from "@/components/ui/badge";
 import { DataTable, Column } from "@/components/ui/data-table";
+import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 
 export default function LeaseDetailPage() {
   const params = useParams();
@@ -16,6 +17,10 @@ export default function LeaseDetailPage() {
   const [charges, setCharges] = useState<LeaseCharge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCharge, setSelectedCharge] = useState<LeaseCharge | null>(
+    null,
+  );
+  const [isDeletingCharge, setIsDeletingCharge] = useState(false);
 
   // New Charge form states
   const [chargeName, setChargeName] = useState("");
@@ -76,13 +81,20 @@ export default function LeaseDetailPage() {
     }
   };
 
-  const handleDeleteCharge = async (chargeId: string) => {
-    if (!confirm("Are you sure you want to remove this charge?")) return;
+  const handleDeleteCharge = async () => {
+    if (!selectedCharge) return;
+
     try {
-      await apiFetch(`/leases/charges/${chargeId}`, { method: "DELETE" });
-      fetchLeaseDetails();
+      setIsDeletingCharge(true);
+      await apiFetch(`/leases/charges/${selectedCharge.id}`, {
+        method: "DELETE",
+      });
+      setSelectedCharge(null);
+      await fetchLeaseDetails();
     } catch (err) {
       console.error("Failed to delete charge:", err);
+    } finally {
+      setIsDeletingCharge(false);
     }
   };
 
@@ -150,7 +162,7 @@ export default function LeaseDetailPage() {
       header: "Actions",
       accessor: (row) => (
         <button
-          onClick={() => handleDeleteCharge(row.id)}
+          onClick={() => setSelectedCharge(row)}
           className="text-xs font-semibold text-rose-600 hover:underline"
         >
           Remove
@@ -158,6 +170,15 @@ export default function LeaseDetailPage() {
       ),
     },
   ];
+
+  const recurringCharges = charges.filter((charge) => true);
+  const recurringChargesTotal = charges.reduce(
+    (total, charge) => total + Number(charge.amount),
+    0,
+  );
+
+  console.log(recurringChargesTotal);
+  const monthlyTotal = Number(lease.monthly_rent) + recurringChargesTotal;
 
   return (
     <div className="p-0 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
@@ -170,51 +191,91 @@ export default function LeaseDetailPage() {
         </Link>
 
         {/* Lease Summary Header Card */}
-        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-slate-900">
-                Lease {lease.lease_number}
-              </h1>
-              <StatusBadge status={lease.status} />
+        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold text-slate-900">
+                  Lease {lease.lease_number}
+                </h1>
+                <StatusBadge status={lease.status} />
+              </div>
+              <p className="text-xs text-slate-500">
+                Assigned to{" "}
+                <strong className="text-slate-800">
+                  {lease.tenant_first_name && lease.tenant_last_name
+                    ? `${lease.tenant_first_name} ${lease.tenant_last_name}`
+                    : "Tenant"}
+                </strong>{" "}
+                in Unit{" "}
+                <strong className="text-slate-800">
+                  {lease.unit_number || "Unit"}
+                </strong>
+              </p>
             </div>
-            <p className="text-xs text-slate-500">
-              Assigned to{" "}
-              <strong className="text-slate-800">
-                {lease.tenant_first_name && lease.tenant_last_name
-                  ? `${lease.tenant_first_name} ${lease.tenant_last_name}`
-                  : "Tenant"}
-              </strong>{" "}
-              in Unit{" "}
-              <strong className="text-slate-800">
-                {lease.unit_number || "Unit"}
-              </strong>
-            </p>
+
+            <div className="flex gap-6 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-6 text-xs">
+              <div>
+                <span className="text-slate-400 block">Monthly Rent</span>
+                <span className="font-bold text-slate-900 text-sm">
+                  {new Intl.NumberFormat("en-KE", {
+                    style: "currency",
+                    currency: "KES",
+                  }).format(lease.monthly_rent)}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Deposit Paid</span>
+                <span className="font-bold text-slate-900 text-sm">
+                  {new Intl.NumberFormat("en-KE", {
+                    style: "currency",
+                    currency: "KES",
+                  }).format(lease.deposit_amount)}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Billing Day</span>
+                <span className="font-bold text-slate-900 text-sm">
+                  Every {lease.billing_day}th
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex gap-6 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-6 text-xs">
-            <div>
-              <span className="text-slate-400 block">Monthly Rent</span>
-              <span className="font-bold text-slate-900 text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-100 pt-4">
+            <div className="text-xs text-slate-600">
+              <span className="font-semibold text-slate-800">
+                Monthly charges:
+              </span>{" "}
+              <span>
+                Rent{" "}
                 {new Intl.NumberFormat("en-KE", {
                   style: "currency",
                   currency: "KES",
                 }).format(lease.monthly_rent)}
               </span>
+              {recurringCharges.map((charge) => (
+                <span key={charge.id}>
+                  {" + "}
+                  {charge.name} (
+                  {new Intl.NumberFormat("en-KE", {
+                    style: "currency",
+                    currency: "KES",
+                  }).format(charge.amount)}
+                  )
+                </span>
+              ))}
+              {recurringCharges.length === 0 && (
+                <span className="text-slate-400"> + no recurring charges</span>
+              )}
             </div>
-            <div>
-              <span className="text-slate-400 block">Deposit Paid</span>
+            <div className="text-xs sm:text-right">
+              <span className="text-slate-400 block">Total per month</span>
               <span className="font-bold text-slate-900 text-sm">
                 {new Intl.NumberFormat("en-KE", {
                   style: "currency",
                   currency: "KES",
-                }).format(lease.deposit_amount)}
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-400 block">Billing Day</span>
-              <span className="font-bold text-slate-900 text-sm">
-                Every {lease.billing_day}th
+                }).format(monthlyTotal)}
               </span>
             </div>
           </div>
@@ -295,6 +356,16 @@ export default function LeaseDetailPage() {
           emptyMessage="No extra charges registered for this lease."
         />
       </div>
+
+      <DeleteConfirmModal
+        isOpen={selectedCharge !== null}
+        onClose={() => setSelectedCharge(null)}
+        onConfirm={handleDeleteCharge}
+        title="Remove Charge"
+        entityName={selectedCharge?.name}
+        confirmLabel="Remove"
+        isLoading={isDeletingCharge}
+      />
     </div>
   );
 }

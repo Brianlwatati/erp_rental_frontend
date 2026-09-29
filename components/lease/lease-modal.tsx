@@ -28,6 +28,7 @@ const leaseFormSchema = z.object({
 
 interface LeaseModalProps {
   lease: Lease | null;
+  leases: Lease[] | null;
   buildings: Building[];
   tenants: Tenant[];
   isOpen: boolean;
