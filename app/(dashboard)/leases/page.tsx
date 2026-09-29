@@ -149,14 +149,14 @@ export default function LeasesPage() {
         </span>
       ),
     },
-    {
-      header: "Billing Day",
-      accessor: (row) => (
-        <span className="text-xs font-medium text-slate-700">
-          Day {row.billing_day}
-        </span>
-      ),
-    },
+    // {
+    //   header: "Billing Day",
+    //   accessor: (row) => (
+    //     <span className="text-xs font-medium text-slate-700">
+    //       Day {row.billing_day}
+    //     </span>
+    //   ),
+    // },
     {
       header: "Status",
       accessor: (row) => <StatusBadge status={row.status} />,

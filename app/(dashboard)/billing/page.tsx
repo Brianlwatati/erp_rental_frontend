@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api_client";
 import { Lease } from "@/types/lease";
 import { Tenant } from "@/types/tenant";
@@ -8,6 +9,7 @@ import { InvoiceModal } from "@/components/billing/InvoiceModal";
 import { Invoice } from "@/types/invoice";
 import { formatBillingDate } from "@/lib/billing_dates";
 import { IssueInvoiceConfirmModal } from "@/components/billing/billingmodal/IssueInvoiceConfirmModal";
+import { PaymentModal } from "@/components/payment/PaymentModal";
 
 export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -22,6 +24,7 @@ export default function BillingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceToIssue, setInvoiceToIssue] = useState<Invoice | null>(null);
+  const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null);
   const [issueError, setIssueError] = useState<string | null>(null);
 
   // Filters
@@ -58,6 +61,10 @@ export default function BillingPage() {
   const handleEdit = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
+  };
+
+  const handlePay = (invoice: Invoice) => {
+    setInvoiceToPay(invoice);
   };
 
   // Issue Draft Invoice Functionality
@@ -229,9 +236,32 @@ export default function BillingPage() {
                       </button>
                     )}
 
+                    {(inv.status === "ISSUED" ||
+                      inv.status === "PARTIALLY_PAID") && (
+                      <button
+                        onClick={() => handlePay(inv)}
+                        className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 transition"
+                      >
+                        Record Payment
+                      </button>
+                    )}
+
+                    <Link
+                      href={`/billing/${inv.id}`}
+                      className="inline-flex items-center rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
+                    >
+                      Details
+                    </Link>
+
                     <button
                       onClick={() => handleEdit(inv)}
-                      className="text-blue-600 hover:text-blue-800 font-semibold text-xs"
+                      disabled={inv.status !== "DRAFT"}
+                      title={
+                        inv.status !== "DRAFT"
+                          ? "Only draft invoices can be edited"
+                          : undefined
+                      }
+                      className="text-blue-600 hover:text-blue-800 font-semibold text-xs disabled:text-slate-400 disabled:cursor-not-allowed"
                     >
                       Edit
                     </button>
@@ -260,6 +290,17 @@ export default function BillingPage() {
         error={issueError}
         onClose={closeIssueConfirm}
         onConfirm={confirmIssue}
+      />
+
+      <PaymentModal
+        isOpen={invoiceToPay !== null}
+        onClose={() => setInvoiceToPay(null)}
+        onSuccess={fetchData}
+        tenants={tenants}
+        unpaidInvoices={invoiceToPay ? [invoiceToPay] : []}
+        preselectedTenantId={invoiceToPay?.tenant_id}
+        preselectedInvoiceId={invoiceToPay?.id}
+        lockToPreselectedInvoice
       />
     </div>
   );

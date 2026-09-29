@@ -14,6 +14,7 @@ interface PaymentModalProps {
   unpaidInvoices: Invoice[];
   preselectedTenantId?: string;
   preselectedInvoiceId?: string;
+  lockToPreselectedInvoice?: boolean;
 }
 
 export function PaymentModal({
@@ -24,6 +25,7 @@ export function PaymentModal({
   unpaidInvoices,
   preselectedTenantId,
   preselectedInvoiceId,
+  lockToPreselectedInvoice = false,
 }: PaymentModalProps) {
   const [formData, setFormData] = useState({
     tenantId: preselectedTenantId || "",
@@ -46,8 +48,17 @@ export function PaymentModal({
   // Filter open invoices for selected tenant
   const tenantInvoices = useMemo(() => {
     if (!formData.tenantId) return [];
-    return unpaidInvoices.filter((inv) => inv.tenant_id === formData.tenantId);
-  }, [formData.tenantId, unpaidInvoices]);
+    return unpaidInvoices.filter(
+      (inv) =>
+        inv.tenant_id === formData.tenantId &&
+        (!lockToPreselectedInvoice || inv.id === preselectedInvoiceId),
+    );
+  }, [
+    formData.tenantId,
+    lockToPreselectedInvoice,
+    preselectedInvoiceId,
+    unpaidInvoices,
+  ]);
 
   useEffect(() => {
     if (isOpen) {
@@ -82,9 +93,17 @@ export function PaymentModal({
       setErrors({});
       setServerError(null);
     }
-  }, [isOpen, preselectedTenantId, preselectedInvoiceId, unpaidInvoices]);
+  }, [
+    isOpen,
+    lockToPreselectedInvoice,
+    preselectedTenantId,
+    preselectedInvoiceId,
+    unpaidInvoices,
+  ]);
 
   const handleTenantChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (lockToPreselectedInvoice) return;
+
     const tenantId = e.target.value;
     const invoices = unpaidInvoices.filter(
       (invoice) => invoice.tenant_id === tenantId,
@@ -205,6 +224,12 @@ export function PaymentModal({
               <select
                 value={formData.tenantId}
                 onChange={handleTenantChange}
+                disabled={lockToPreselectedInvoice}
+                title={
+                  lockToPreselectedInvoice
+                    ? "Payment is tied to the selected invoice"
+                    : undefined
+                }
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
               >
                 <option value="">Select Tenant</option>

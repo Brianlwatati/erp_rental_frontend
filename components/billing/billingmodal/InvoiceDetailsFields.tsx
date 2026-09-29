@@ -52,7 +52,11 @@ export function InvoiceDetailsFields({
         >
           <option value="">Choose Active Lease</option>
           {leases.map((lease) => (
-            <option key={lease.id} value={lease.id}>
+            <option
+              key={lease.id}
+              value={lease.id}
+              disabled={lease.lease_invoice_id != null}
+            >
               Unit {lease.unit_number} - {lease.building_name}:{" "}
               {lease.tenant_first_name} {lease.tenant_last_name}
             </option>

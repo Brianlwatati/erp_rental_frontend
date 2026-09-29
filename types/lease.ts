@@ -25,6 +25,7 @@ export interface Lease {
   deposit_amount: number;
   include_deposit_in_first_invoice: boolean;
   rentpluscharges: number;
+  lease_invoice_id?: string | null;
   billing_day: number;
   status: LeaseStatus;
   termination_date?: string | null;
