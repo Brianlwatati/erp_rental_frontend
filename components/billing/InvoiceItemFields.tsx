@@ -19,6 +19,8 @@ interface InvoiceItemFieldsProps {
 
 const ITEM_TYPES = [
   { label: "Rent", value: "RENT" },
+  { label: "Utility", value: "UTILITY" },
+  { label: "Service", value: "SERVICE" },
   { label: "Water", value: "WATER" },
   { label: "Electricity", value: "ELECTRICITY" },
   { label: "Garbage / Trash", value: "GARBAGE" },

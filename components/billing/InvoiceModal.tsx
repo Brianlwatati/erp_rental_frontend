@@ -1,11 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { apiFetch } from "@/lib/api_client";
-import { Lease } from "@/types/lease";
+import { Lease, LeaseCharge } from "@/types/lease";
 import { Tenant } from "@/types/tenant";
 import { Invoice, InvoiceCreateInput } from "@/types/invoice";
 import { InvoiceItemFields, InvoiceItemInput } from "./InvoiceItemFields";
+import {
+  InvoiceDetailsFields,
+  InvoiceFormData,
+} from "./billingmodal/InvoiceDetailsFields";
+import { InvoiceFinancialFields } from "./billingmodal/InvoiceFinancialFields";
+import {
+  addDaysToBillingDate,
+  formatBillingDateInput,
+} from "@/lib/billing_dates";
 
 type InvoiceValidationResult =
   | { success: true; data: InvoiceCreateInput }
@@ -97,11 +106,11 @@ export function InvoiceModal({
     },
   ]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<InvoiceFormData>({
     tenantId: "",
     leaseId: "",
     invoiceNumber: "",
-    invoiceDate: new Date().toISOString().split("T")[0],
+    invoiceDate: formatBillingDateInput(new Date()),
     dueDate: "",
     periodStart: "",
     periodEnd: "",
@@ -112,7 +121,10 @@ export function InvoiceModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [loadingCharges, setLoadingCharges] = useState(false);
+  const [chargeLoadError, setChargeLoadError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const chargeFetchVersion = useRef(0);
 
   // Sync state when modal opens or editing
   useEffect(() => {
@@ -122,10 +134,10 @@ export function InvoiceModal({
           tenantId: invoice.tenant_id || "",
           leaseId: invoice.lease_id || "",
           invoiceNumber: invoice.invoice_number || "",
-          invoiceDate: invoice.invoice_date?.split("T")[0] || "",
-          dueDate: invoice.due_date?.split("T")[0] || "",
-          periodStart: invoice.period_start?.split("T")[0] || "",
-          periodEnd: invoice.period_end?.split("T")[0] || "",
+          invoiceDate: formatBillingDateInput(invoice.invoice_date || ""),
+          dueDate: formatBillingDateInput(invoice.due_date || ""),
+          periodStart: formatBillingDateInput(invoice.period_start || ""),
+          periodEnd: formatBillingDateInput(invoice.period_end || ""),
           discount: Number(invoice.discount) || 0,
           tax: Number(invoice.tax) || 0,
           notes: invoice.notes || "",
@@ -145,20 +157,21 @@ export function InvoiceModal({
           );
         }
       } else {
-        const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const today = formatBillingDateInput(new Date());
+        const [year, month] = today.split("-").map(Number);
+        const firstDay = `${year}-${String(month).padStart(2, "0")}-01`;
+        const lastDay = formatBillingDateInput(
+          new Date(Date.UTC(year, month, 0)),
+        );
 
         setFormData({
           tenantId: "",
           leaseId: "",
           invoiceNumber: "",
-          invoiceDate: today.toISOString().split("T")[0],
-          dueDate: new Date(today.setDate(today.getDate() + 7))
-            .toISOString()
-            .split("T")[0],
-          periodStart: firstDay.toISOString().split("T")[0],
-          periodEnd: lastDay.toISOString().split("T")[0],
+          invoiceDate: today,
+          dueDate: addDaysToBillingDate(today, 7),
+          periodStart: firstDay,
+          periodEnd: lastDay,
           discount: 0,
           tax: 0,
           notes: "",
@@ -175,6 +188,9 @@ export function InvoiceModal({
       }
       setErrors({});
       setServerError(null);
+      setChargeLoadError(null);
+    } else {
+      chargeFetchVersion.current += 1;
     }
   }, [invoice, isOpen]);
 
@@ -194,25 +210,78 @@ export function InvoiceModal({
   }, [subtotal, formData.discount, formData.tax]);
 
   // Handle Lease changes and auto-bind Tenant & Rent price
-  const handleLeaseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLeaseChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const leaseId = e.target.value;
     const selectedLease = leases.find((l) => l.id === leaseId);
+    const requestVersion = ++chargeFetchVersion.current;
 
     setFormData((prev) => ({
       ...prev,
       leaseId,
       tenantId: selectedLease?.tenant_id || prev.tenantId,
     }));
+    setChargeLoadError(null);
 
-    if (selectedLease?.monthly_rent) {
-      setItems((prevItems) => {
-        const updated = [...prevItems];
-        if (updated.length > 0 && updated[0].itemType === "RENT") {
-          updated[0].unitPrice = selectedLease.monthly_rent;
-          updated[0].amount = selectedLease.monthly_rent * updated[0].quantity;
-        }
-        return updated;
-      });
+    if (!selectedLease) {
+      setLoadingCharges(false);
+      setItems([
+        {
+          description: "Monthly Rent",
+          itemType: "RENT",
+          quantity: 1,
+          unitPrice: 0,
+          amount: 0,
+        },
+      ]);
+      return;
+    }
+
+    const rent = Number(selectedLease.monthly_rent) || 0;
+    const rentItem: InvoiceItemInput = {
+      description: "Monthly Rent",
+      itemType: "RENT",
+      quantity: 1,
+      unitPrice: rent,
+      amount: rent,
+    };
+    setItems([rentItem]);
+    setLoadingCharges(true);
+
+    try {
+      const response = await apiFetch<LeaseCharge[]>(
+        `/leases/${leaseId}/charges`,
+      );
+      if (requestVersion !== chargeFetchVersion.current) return;
+
+      const recurringItems = (response.data || [])
+        .filter((charge) => charge.recurring)
+        .map((charge): InvoiceItemInput => {
+          const chargeType = charge.charge_type.toUpperCase();
+          const supportedTypes = ["UTILITY", "SERVICE", "PARKING", "OTHER"];
+          const amount = Number(charge.amount) || 0;
+
+          return {
+            description: charge.name,
+            itemType: supportedTypes.includes(chargeType)
+              ? chargeType
+              : "OTHER",
+            quantity: 1,
+            unitPrice: amount,
+            amount,
+          };
+        });
+
+      setItems([rentItem, ...recurringItems]);
+    } catch (err) {
+      if (requestVersion !== chargeFetchVersion.current) return;
+      console.error("Failed to load lease charges:", err);
+      setChargeLoadError(
+        "Unable to load lease charges. Select the lease again to retry.",
+      );
+    } finally {
+      if (requestVersion === chargeFetchVersion.current) {
+        setLoadingCharges(false);
+      }
     }
   };
 
@@ -233,8 +302,10 @@ export function InvoiceModal({
     setLoading(true);
     setServerError(null);
 
-    const payloadToValidate = {
+    const payloadToValidate: InvoiceCreateInput = {
       ...formData,
+      discount: Number(formData.discount) || 0,
+      tax: Number(formData.tax) || 0,
       items: items.map((i) => ({
         description: i.description,
         itemType: i.itemType,
@@ -304,121 +375,16 @@ export function InvoiceModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Lease Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Select Lease <span className="text-rose-500">*</span>
-              </label>
-              <select
-                name="leaseId"
-                value={formData.leaseId}
-                onChange={handleLeaseChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-              >
-                <option value="">Choose Active Lease</option>
-                {leases.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    Unit {l.unit_number} - {l.building_name}:{" "}
-                    {l.tenant_first_name} {l.tenant_last_name}
-                  </option>
-                ))}
-              </select>
-              {errors.leaseId && (
-                <p className="mt-1 text-xs text-rose-600">{errors.leaseId}</p>
-              )}
-            </div>
-
-            {/* Tenant Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Tenant <span className="text-rose-500">*</span>
-              </label>
-              <select
-                name="tenantId"
-                value={formData.tenantId}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-              >
-                <option value="">Choose Tenant</option>
-                {tenants.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.first_name} {t.last_name}
-                  </option>
-                ))}
-              </select>
-              {errors.tenantId && (
-                <p className="mt-1 text-xs text-rose-600">{errors.tenantId}</p>
-              )}
-            </div>
-
-            {/* Invoice Date */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Invoice Date
-              </label>
-              <input
-                type="date"
-                name="invoiceDate"
-                value={formData.invoiceDate}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-
-            {/* Due Date */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Due Date <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="dueDate"
-                value={formData.dueDate}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-              {errors.dueDate && (
-                <p className="mt-1 text-xs text-rose-600">{errors.dueDate}</p>
-              )}
-            </div>
-
-            {/* Billing Period Start */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Period Start Date <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="periodStart"
-                value={formData.periodStart}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-              {errors.periodStart && (
-                <p className="mt-1 text-xs text-rose-600">
-                  {errors.periodStart}
-                </p>
-              )}
-            </div>
-
-            {/* Billing Period End */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Period End Date <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="periodEnd"
-                value={formData.periodEnd}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-              {errors.periodEnd && (
-                <p className="mt-1 text-xs text-rose-600">{errors.periodEnd}</p>
-              )}
-            </div>
-          </div>
+          <InvoiceDetailsFields
+            formData={formData}
+            leases={leases}
+            tenants={tenants}
+            errors={errors}
+            loadingCharges={loadingCharges}
+            chargeLoadError={chargeLoadError}
+            onLeaseChange={handleLeaseChange}
+            onChange={handleChange}
+          />
 
           {/* Dynamic Items */}
           <InvoiceItemFields
@@ -427,64 +393,14 @@ export function InvoiceModal({
             errors={errors}
           />
 
-          {/* Discounts & Taxes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Discount (KES)
-              </label>
-              <input
-                type="number"
-                name="discount"
-                min="0"
-                value={formData.discount}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Tax (KES)
-              </label>
-              <input
-                type="number"
-                name="tax"
-                min="0"
-                value={formData.tax}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-          </div>
-
-          {/* Live Calculated Totals Card */}
-          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs">
-            <span className="text-slate-600">
-              Subtotal: KES {subtotal.toLocaleString()}
-            </span>
-            <span className="text-slate-600">
-              Tax/Disc: +{formData.tax} / -{formData.discount}
-            </span>
-            <span className="text-sm font-bold text-slate-900">
-              Total: KES {total.toLocaleString()}
-            </span>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Notes
-            </label>
-            <textarea
-              name="notes"
-              rows={2}
-              value={formData.notes}
-              onChange={handleChange}
-              placeholder="Payment instructions or terms..."
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-            />
-          </div>
+          <InvoiceFinancialFields
+            discount={formData.discount}
+            tax={formData.tax}
+            notes={formData.notes}
+            subtotal={subtotal}
+            total={total}
+            onChange={handleChange}
+          />
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
@@ -497,7 +413,7 @@ export function InvoiceModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || loadingCharges || chargeLoadError !== null}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition disabled:opacity-50"
             >
               {loading

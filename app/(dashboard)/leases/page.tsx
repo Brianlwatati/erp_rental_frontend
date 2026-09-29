@@ -134,7 +134,18 @@ export default function LeasesPage() {
           {new Intl.NumberFormat("en-KE", {
             style: "currency",
             currency: "KES",
-          }).format(row.monthly_rent)}
+          }).format(row.monthly_rent || 0)}
+        </span>
+      ),
+    },
+    {
+      header: "Charges ",
+      accessor: (row) => (
+        <span className="font-bold text-slate-900">
+          {new Intl.NumberFormat("en-KE", {
+            style: "currency",
+            currency: "KES",
+          }).format(row.rentpluscharges - row.monthly_rent || 0)}
         </span>
       ),
     },

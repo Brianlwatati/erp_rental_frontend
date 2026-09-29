@@ -4,7 +4,10 @@ import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api_client";
 import { Lease } from "@/types/lease";
 import { Tenant } from "@/types/tenant";
-import { Invoice, InvoiceModal } from "@/components/billing/InvoiceModal";
+import { InvoiceModal } from "@/components/billing/InvoiceModal";
+import { Invoice } from "@/types/invoice";
+import { formatBillingDate } from "@/lib/billing_dates";
+import { IssueInvoiceConfirmModal } from "@/components/billing/billingmodal/IssueInvoiceConfirmModal";
 
 export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -18,6 +21,8 @@ export default function BillingPage() {
   // Modals & Selection
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [invoiceToIssue, setInvoiceToIssue] = useState<Invoice | null>(null);
+  const [issueError, setIssueError] = useState<string | null>(null);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -56,16 +61,17 @@ export default function BillingPage() {
   };
 
   // Issue Draft Invoice Functionality
-  const handleIssue = async (invoice: Invoice) => {
-    if (
-      !confirm(
-        `Are you sure you want to issue invoice #${invoice.invoice_number}?`,
-      )
-    ) {
-      return;
-    }
+  const handleIssue = (invoice: Invoice) => {
+    setInvoiceToIssue(invoice);
+    setIssueError(null);
+  };
 
+  const confirmIssue = async () => {
+    if (!invoiceToIssue) return;
+
+    const invoice = invoiceToIssue;
     setIssuingId(invoice.id);
+    setIssueError(null);
     try {
       await apiFetch(`/invoices/${invoice.id}/issue`, {
         method: "POST",
@@ -76,13 +82,22 @@ export default function BillingPage() {
       });
 
       // Refresh list to update badge to ISSUED
+      setInvoiceToIssue(null);
       await fetchData();
     } catch (err: any) {
       console.error("Failed to issue invoice:", err);
-      alert(err.message || "Failed to issue invoice. Please try again.");
+      setIssueError(
+        err.message || "Failed to issue invoice. Please try again.",
+      );
     } finally {
       setIssuingId(null);
     }
+  };
+
+  const closeIssueConfirm = () => {
+    if (issuingId) return;
+    setInvoiceToIssue(null);
+    setIssueError(null);
   };
 
   const filteredInvoices = invoices.filter((inv) => {
@@ -190,9 +205,7 @@ export default function BillingPage() {
                     {inv.invoice_number}
                   </td>
                   <td className="p-3">
-                    {inv.due_date
-                      ? new Date(inv.due_date).toLocaleDateString()
-                      : "-"}
+                    {inv.due_date ? formatBillingDate(inv.due_date) : "-"}
                   </td>
                   <td className="p-3 font-semibold text-slate-900">
                     KES {Number(inv.total).toLocaleString()}
@@ -238,6 +251,15 @@ export default function BillingPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchData}
+      />
+
+      <IssueInvoiceConfirmModal
+        invoice={invoiceToIssue}
+        isOpen={invoiceToIssue !== null}
+        isLoading={issuingId === invoiceToIssue?.id}
+        error={issueError}
+        onClose={closeIssueConfirm}
+        onConfirm={confirmIssue}
       />
     </div>
   );
