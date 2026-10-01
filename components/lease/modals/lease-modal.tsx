@@ -19,6 +19,7 @@ const leaseFormSchema = z.object({
     .number()
     .min(0, "Deposit must be positive")
     .default(0),
+  include_deposit_in_first_invoice: z.boolean().default(false),
   billingDay: z.coerce.number().min(1).max(28).default(1),
   status: z
     .enum(["DRAFT", "ACTIVE", "EXPIRED", "TERMINATED"])
@@ -66,6 +67,7 @@ export function LeaseModal({
     endDate: "",
     monthlyRent: "" as number | string,
     depositAmount: 0,
+    include_deposit_in_first_invoice: false,
     billingDay: 1,
     status: "ACTIVE",
     notes: "",
@@ -98,6 +100,8 @@ export function LeaseModal({
           endDate: lease.end_date ? lease.end_date.split("T")[0] : "",
           monthlyRent: lease.monthly_rent ?? "",
           depositAmount: lease.deposit_amount ?? 0,
+          include_deposit_in_first_invoice:
+            lease.include_deposit_in_first_invoice ?? false,
           billingDay: lease.billing_day ?? 1,
           status: lease.status || "ACTIVE",
           notes: lease.notes || "",
@@ -123,6 +127,7 @@ export function LeaseModal({
           endDate: "",
           monthlyRent: "",
           depositAmount: 0,
+          include_deposit_in_first_invoice: false,
           billingDay: 1,
           status: "ACTIVE",
           notes: "",
@@ -238,7 +243,11 @@ export function LeaseModal({
     >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const nextValue =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : value;
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -284,6 +293,8 @@ export function LeaseModal({
         ...(validation.data.endDate && { endDate: validation.data.endDate }),
         monthlyRent: validation.data.monthlyRent,
         depositAmount: validation.data.depositAmount,
+        include_deposit_in_first_invoice:
+          validation.data.include_deposit_in_first_invoice,
         billingDay: validation.data.billingDay,
         status: validation.data.status,
         ...(validation.data.notes && { notes: validation.data.notes }),

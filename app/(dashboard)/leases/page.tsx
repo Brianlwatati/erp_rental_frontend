@@ -9,6 +9,7 @@ import { Tenant } from "@/types/tenant";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/badge";
 import { LeaseModal } from "@/components/lease/modals/lease-modal";
+import InfoModal from "@/components/ui/InfoModal";
 
 export default function LeasesPage() {
   const [leases, setLeases] = useState<Lease[]>([]);
@@ -19,6 +20,7 @@ export default function LeasesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedLease, setSelectedLease] = useState<Lease | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [blockedLease, setBlockedLease] = useState<Lease | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -44,6 +46,11 @@ export default function LeasesPage() {
   }, [fetchData]);
 
   const handleEdit = (lease: Lease) => {
+    if (lease.lease_invoice_id != null) {
+      setBlockedLease(lease);
+      return;
+    }
+
     setSelectedLease(lease);
     setIsModalOpen(true);
   };
@@ -179,7 +186,17 @@ export default function LeasesPage() {
           </Link>
           <button
             onClick={() => handleEdit(row)}
-            className="text-xs font-semibold text-blue-600 hover:underline"
+            aria-disabled={row.lease_invoice_id != null}
+            title={
+              row.lease_invoice_id != null
+                ? "This lease has already been invoiced and cannot be edited"
+                : undefined
+            }
+            className={`text-xs font-semibold ${
+              row.lease_invoice_id != null
+                ? "cursor-not-allowed text-slate-400"
+                : "text-blue-600 hover:underline"
+            }`}
           >
             Edit
           </button>
@@ -253,6 +270,17 @@ export default function LeasesPage() {
           onSuccess={fetchData}
         />
       )}
+
+      <InfoModal
+        isOpen={blockedLease !== null}
+        onClose={() => setBlockedLease(null)}
+        title="Lease already invoiced"
+        description={
+          blockedLease
+            ? `Lease ${blockedLease.lease_number} has already been invoiced to the client and can no longer be edited.`
+            : ""
+        }
+      />
     </div>
   );
 }

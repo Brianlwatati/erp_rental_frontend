@@ -8,6 +8,7 @@ import { Tenant } from "@/types/tenant";
 import { Lease } from "@/types/lease";
 import { Payment } from "@/types/payment";
 import { Invoice } from "@/types/invoice";
+import { UserRound } from "lucide-react";
 
 interface TenantDetailsData {
   tenant: Tenant | null;
@@ -31,7 +32,7 @@ export default function TenantPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
     "leases" | "invoices" | "payments" | "info"
-  >("leases");
+  >("info");
 
   const fetchAllData = useCallback(async () => {
     if (!tenantId) return;
@@ -85,17 +86,6 @@ export default function TenantPage() {
     });
   };
 
-  // Aggregated metrics
-  const totalBalance = data.invoices.reduce(
-    (acc, inv) => acc + Number(inv.balance || 0),
-    0,
-  );
-  const totalPaid = data.payments.reduce(
-    (acc, pmt) => acc + Number(pmt.amount || 0),
-    0,
-  );
-  const activeLeases = data.leases.filter((l) => l.status === "ACTIVE").length;
-
   if (loading) {
     return (
       <div className="p-12 text-center text-slate-500 text-sm animate-pulse">
@@ -121,6 +111,17 @@ export default function TenantPage() {
   }
 
   const { tenant, leases, invoices, payments } = data;
+  const activeLeaseCount = leases.filter(
+    (lease) => lease.status === "ACTIVE",
+  ).length;
+  const outstandingBalance = invoices.reduce(
+    (total, invoice) => total + Number(invoice.balance || 0),
+    0,
+  );
+  const totalPaid = invoices.reduce(
+    (total, invoice) => total + Number(invoice.amount_paid || 0),
+    0,
+  );
 
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 text-slate-800 bg-slate-50/50 min-h-screen">
@@ -181,53 +182,93 @@ export default function TenantPage() {
       </div>
 
       {/* Tenant Profile Banner & Stats */}
-      <div className="grid grid-cols-1  gap-6">
-        {/* Profile Card */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between">
-              <span
-                className={`px-3 py-1 text-xs font-bold rounded-full border uppercase tracking-wider ${
-                  tenant.status === "ACTIVE"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-slate-100 text-slate-700 border-slate-200"
-                }`}
-              >
-                {tenant.status}
-              </span>
-              <span className="text-xs text-slate-400 font-mono">
-                ID: {tenant.national_id || "N/A"}
-              </span>
+      <div className="space-y-4">
+        <div className="grid gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[minmax(0,1.5fr)_minmax(17rem,0.8fr)] md:items-center">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-lg font-bold text-teal-800">
+              <UserRound aria-hidden="true" className="h-11 w-11" />
             </div>
-
-            <div className="mt-4">
-              <h2 className="text-lg font-bold text-slate-900">
-                {tenant.first_name} {tenant.last_name}
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">{tenant.email}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{tenant.phone}</p>
-              <p className="text-xs text-slate-500 mt-1">
-                📍 {tenant.address || "No address provided"}
+            <div className="min-w-0 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900">
+                  {tenant.first_name} {tenant.last_name}
+                </h2>
+                <span
+                  className={`rounded-full border px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider ${
+                    tenant.status === "ACTIVE"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-slate-200 bg-slate-100 text-slate-700"
+                  }`}
+                >
+                  {tenant.status}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+                <span>{tenant.email || "No email provided"}</span>
+                <span>{tenant.phone || "No phone provided"}</span>
+              </div>
+              <p className="text-xs text-slate-500">
+                {tenant.address || "No address provided"}
+              </p>
+              <p className="text-[11px] font-mono text-slate-400">
+                National ID: {tenant.national_id || "N/A"}
               </p>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 text-xs text-slate-600 space-y-1">
-            <span className="font-semibold text-slate-700 block mb-1">
-              Emergency Contact:
-            </span>
-            <div className="flex justify-between">
-              <span>Name:</span>
-              <span className="font-medium text-slate-900">
-                {tenant.emergency_contact_name || "N/A"}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Phone:</span>
-              <span className="font-medium text-slate-900">
-                {tenant.emergency_contact_phone || "N/A"}
-              </span>
-            </div>
+          <div className="border-t border-slate-100 pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Emergency Contact
+            </p>
+            <p className="text-sm font-semibold text-slate-900">
+              {tenant.emergency_contact_name || "No contact listed"}
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              {tenant.emergency_contact_phone || "No phone provided"}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+              Active Leases
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {activeLeaseCount}
+            </p>
+            <p className="mt-1 text-xs text-slate-600">Currently active</p>
+          </div>
+          <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-sky-800">
+              Invoices
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {invoices.length}
+            </p>
+            <p className="mt-1 text-xs text-slate-600">All recorded invoices</p>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+              Outstanding Balance
+            </p>
+            <p className="mt-2 text-lg font-bold text-slate-900">
+              {formatCurrency(outstandingBalance)}
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              Remaining across invoices
+            </p>
+          </div>
+          <div className="rounded-lg border border-teal-200 bg-teal-50/70 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-teal-800">
+              Paid to Date
+            </p>
+            <p className="mt-2 text-lg font-bold text-slate-900">
+              {formatCurrency(totalPaid)}
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              Total payments applied
+            </p>
           </div>
         </div>
       </div>
@@ -235,6 +276,16 @@ export default function TenantPage() {
       {/* Main Tabs Navigation */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div className="border-b border-slate-200 bg-slate-50/50 px-6 pt-3 flex gap-6 text-xs font-semibold">
+          <button
+            onClick={() => setActiveTab("info")}
+            className={`pb-3 border-b-2 transition-all ${
+              activeTab === "info"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Full Profile
+          </button>
           <button
             onClick={() => setActiveTab("leases")}
             className={`pb-3 border-b-2 transition-all ${
@@ -264,16 +315,6 @@ export default function TenantPage() {
             }`}
           >
             Payments ({payments.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("info")}
-            className={`pb-3 border-b-2 transition-all ${
-              activeTab === "info"
-                ? "border-slate-900 text-slate-900"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Full Profile
           </button>
         </div>
 

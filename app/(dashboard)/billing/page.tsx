@@ -10,6 +10,7 @@ import { Invoice } from "@/types/invoice";
 import { formatBillingDate } from "@/lib/billing_dates";
 import { IssueInvoiceConfirmModal } from "@/components/billing/billingmodal/IssueInvoiceConfirmModal";
 import { PaymentModal } from "@/components/payment/PaymentModal";
+import InfoModal from "@/components/ui/InfoModal";
 
 export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -25,6 +26,9 @@ export default function BillingPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceToIssue, setInvoiceToIssue] = useState<Invoice | null>(null);
   const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null);
+  const [invoiceEditNotice, setInvoiceEditNotice] = useState<Invoice | null>(
+    null,
+  );
   const [issueError, setIssueError] = useState<string | null>(null);
 
   // Filters
@@ -59,6 +63,11 @@ export default function BillingPage() {
   };
 
   const handleEdit = (invoice: Invoice) => {
+    if (invoice.status !== "DRAFT") {
+      setInvoiceEditNotice(invoice);
+      return;
+    }
+
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
   };
@@ -255,13 +264,17 @@ export default function BillingPage() {
 
                     <button
                       onClick={() => handleEdit(inv)}
-                      disabled={inv.status !== "DRAFT"}
+                      aria-disabled={inv.status !== "DRAFT"}
                       title={
                         inv.status !== "DRAFT"
                           ? "Only draft invoices can be edited"
                           : undefined
                       }
-                      className="text-blue-600 hover:text-blue-800 font-semibold text-xs disabled:text-slate-400 disabled:cursor-not-allowed"
+                      className={`font-semibold text-xs ${
+                        inv.status !== "DRAFT"
+                          ? "cursor-not-allowed text-slate-400"
+                          : "text-blue-600 hover:text-blue-800"
+                      }`}
                     >
                       Edit
                     </button>
@@ -301,6 +314,17 @@ export default function BillingPage() {
         preselectedTenantId={invoiceToPay?.tenant_id}
         preselectedInvoiceId={invoiceToPay?.id}
         lockToPreselectedInvoice
+      />
+
+      <InfoModal
+        isOpen={invoiceEditNotice !== null}
+        onClose={() => setInvoiceEditNotice(null)}
+        title="Invoice cannot be edited"
+        description={
+          invoiceEditNotice
+            ? `Only draft invoices can be edited. This invoice is currently ${invoiceEditNotice.status.replace("_", " ").toLowerCase()}.`
+            : ""
+        }
       />
     </div>
   );

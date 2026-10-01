@@ -199,6 +199,18 @@ export function LeaseFormFields({
         />
       </div>
 
+      <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+        <input
+          id="include_deposit_in_first_invoice"
+          name="include_deposit_in_first_invoice"
+          type="checkbox"
+          checked={formData.include_deposit_in_first_invoice}
+          onChange={onChange}
+          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+        />
+        Include deposit in first invoice
+      </label>
+
       {/* Start Date */}
       <div>
         <label
