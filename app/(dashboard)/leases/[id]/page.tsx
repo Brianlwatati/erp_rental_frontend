@@ -272,10 +272,18 @@ export default function LeaseDetailPage() {
             <div className="text-xs sm:text-right">
               <span className="text-slate-400 block">Total per month</span>
               <span className="font-bold text-slate-900 text-sm">
-                {new Intl.NumberFormat("en-KE", {
-                  style: "currency",
-                  currency: "KES",
-                }).format(monthlyTotal)}
+                {lease.include_deposit_in_first_invoice
+                  ? new Intl.NumberFormat("en-KE", {
+                      style: "currency",
+                      currency: "KES",
+                    }).format(
+                      Number(lease.rentpluscharges || 0) +
+                        Number(lease.deposit_amount || 0),
+                    )
+                  : new Intl.NumberFormat("en-KE", {
+                      style: "currency",
+                      currency: "KES",
+                    }).format(lease.rentpluscharges)}
               </span>
             </div>
           </div>

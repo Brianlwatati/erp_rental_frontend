@@ -19,7 +19,7 @@ const leaseFormSchema = z.object({
     .number()
     .min(0, "Deposit must be positive")
     .default(0),
-  include_deposit_in_first_invoice: z.boolean().default(false),
+  includeDepositInFirstInvoice: z.boolean().default(false),
   billingDay: z.coerce.number().min(1).max(28).default(1),
   status: z
     .enum(["DRAFT", "ACTIVE", "EXPIRED", "TERMINATED"])
@@ -294,9 +294,11 @@ export function LeaseModal({
         monthlyRent: validation.data.monthlyRent,
         depositAmount: validation.data.depositAmount,
         include_deposit_in_first_invoice:
-          validation.data.include_deposit_in_first_invoice,
+          validation.data.includeDepositInFirstInvoice,
         billingDay: validation.data.billingDay,
         status: validation.data.status,
+        includeDepositInFirstInvoice:
+          validation.data.includeDepositInFirstInvoice,
         ...(validation.data.notes && { notes: validation.data.notes }),
       };
 

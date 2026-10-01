@@ -81,10 +81,10 @@ export default function SummaryView({ lease, charges }: SummaryViewProps) {
           <p className="text-xs text-slate-600 mt-1">
             Billing Cycle: Day {lease.billing_day} of every month
           </p>
-          <p className="text-xs text-slate-600 mt-1">
+          {/* <p className="text-xs text-slate-600 mt-1">
             Deposit in First Invoice:{" "}
             {lease.include_deposit_in_first_invoice ? "Yes" : "No"}
-          </p>
+          </p> */}
         </div>
       </div>
 
@@ -198,12 +198,28 @@ export default function SummaryView({ lease, charges }: SummaryViewProps) {
               {formatCurrency(lease.monthly_rent)}
             </span>
           </div>
-          <div className="flex justify-between text-slate-600">
-            <span>Security Deposit:</span>
-            <span className="font-semibold text-slate-900">
-              {formatCurrency(lease.deposit_amount)}
-            </span>
-          </div>
+
+          {lease.include_deposit_in_first_invoice && (
+            <>
+              <div className="flex justify-between text-slate-600">
+                <span>Security Deposit:</span>
+                <span className="font-semibold text-slate-900">
+                  {formatCurrency(lease.deposit_amount)}
+                </span>
+              </div>
+              {/* <div className="flex justify-between text-slate-600">
+                <span>Amount Due in First Invoice:</span>
+                <span className="font-semibold text-slate-900">
+                  {formatCurrency(
+                    Number(lease.monthly_rent || 0) +
+                      (lease.include_deposit_in_first_invoice
+                        ? Number(lease.deposit_amount || 0)
+                        : 0),
+                  )}
+                </span>
+              </div> */}
+            </>
+          )}
           {charges.length > 0 && (
             <div className="flex justify-between text-slate-600">
               <span>Total Additional Charges:</span>
@@ -215,9 +231,14 @@ export default function SummaryView({ lease, charges }: SummaryViewProps) {
             </div>
           )}
           <div className="flex justify-between text-sm font-extrabold text-slate-900 border-t border-slate-200 pt-2 mt-1">
-            <span>Total Monthly Commitment:</span>
+            <span>Total Month's Commitment:</span>
             <span className="text-emerald-700 print:text-slate-900">
-              {formatCurrency(lease.rentpluscharges)}
+              {formatCurrency(
+                Number(lease.rentpluscharges || 0) +
+                  (lease.include_deposit_in_first_invoice
+                    ? Number(lease.deposit_amount || 0)
+                    : 0),
+              )}
             </span>
           </div>
         </div>
