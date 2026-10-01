@@ -208,7 +208,7 @@ export default function NotificationsPage() {
                         {notification.entity_type === "LEASE" &&
                           notification.entity_id && (
                             <Link
-                              href={`/leases/${notification.entity_id}`}
+                              href={`/leases/${notification.entity_id}/print`}
                               className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900"
                             >
                               View lease

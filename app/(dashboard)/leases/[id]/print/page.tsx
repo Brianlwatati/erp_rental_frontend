@@ -134,16 +134,18 @@ export default function LeaseDetailPagePrint() {
             >
               Summary Sheet
             </button>
-            <button
-              onClick={() => setActiveTab("contract")}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                activeTab === "contract"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "hover:text-slate-900"
-              }`}
-            >
-              Legal Contract
-            </button>
+            {lease.include_deposit_in_first_invoice && (
+              <button
+                onClick={() => setActiveTab("contract")}
+                className={`px-3 py-1.5 rounded-md transition-all ${
+                  activeTab === "contract"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "hover:text-slate-900"
+                }`}
+              >
+                Legal Contract
+              </button>
+            )}
           </div>
 
           <button
@@ -179,9 +181,10 @@ export default function LeaseDetailPagePrint() {
         )}
 
         {/* Legal Contract Clauses */}
-        {(activeTab === "all" || activeTab === "contract") && (
-          <ContractView lease={lease} charges={charges} />
-        )}
+        {lease.include_deposit_in_first_invoice &&
+          (activeTab === "all" || activeTab === "contract") && (
+            <ContractView lease={lease} charges={charges} />
+          )}
       </div>
     </div>
   );
