@@ -10,6 +10,7 @@ interface DeleteConfirmModalProps {
   entityName?: string;
   description?: string;
   confirmLabel?: string;
+  loadingLabel?: string;
   cancelLabel?: string;
   isLoading?: boolean;
 }
@@ -22,6 +23,7 @@ export default function DeleteConfirmModal({
   entityName,
   description,
   confirmLabel = "Delete",
+  loadingLabel = "Deleting...",
   cancelLabel = "Cancel",
   isLoading = false,
 }: DeleteConfirmModalProps) {
@@ -104,7 +106,7 @@ export default function DeleteConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 min-w-[80px]"
+            className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 min-w-20"
           >
             {isLoading ? (
               <>
@@ -128,7 +130,7 @@ export default function DeleteConfirmModal({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Deleting...
+                {loadingLabel}
               </>
             ) : (
               confirmLabel

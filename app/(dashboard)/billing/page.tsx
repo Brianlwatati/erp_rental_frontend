@@ -11,6 +11,8 @@ import { formatBillingDate } from "@/lib/billing_dates";
 import { IssueInvoiceConfirmModal } from "@/components/billing/billingmodal/IssueInvoiceConfirmModal";
 import { PaymentModal } from "@/components/payment/PaymentModal";
 import InfoModal from "@/components/ui/InfoModal";
+import { DataTable, Column } from "@/components/ui/data-table";
+import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 
 export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -26,10 +28,16 @@ export default function BillingPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceToIssue, setInvoiceToIssue] = useState<Invoice | null>(null);
   const [invoiceToPay, setInvoiceToPay] = useState<Invoice | null>(null);
+  const [invoiceToCancel, setInvoiceToCancel] = useState<Invoice | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [invoiceEditNotice, setInvoiceEditNotice] = useState<Invoice | null>(
     null,
   );
   const [issueError, setIssueError] = useState<string | null>(null);
+  const [invoiceActionError, setInvoiceActionError] = useState<string | null>(
+    null,
+  );
+  const [invoiceActionLoading, setInvoiceActionLoading] = useState(false);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -74,6 +82,49 @@ export default function BillingPage() {
 
   const handlePay = (invoice: Invoice) => {
     setInvoiceToPay(invoice);
+  };
+
+  const confirmCancelInvoice = async () => {
+    if (!invoiceToCancel) return;
+
+    const target = invoiceToCancel;
+    setInvoiceActionLoading(true);
+    setInvoiceActionError(null);
+    try {
+      await apiFetch(`/invoices/${target.id}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ id: target.id, lease_id: target.lease_id }),
+      });
+      setInvoiceToCancel(null);
+      await fetchData();
+    } catch (err) {
+      setInvoiceActionError(
+        err instanceof Error ? err.message : "Failed to cancel invoice.",
+      );
+      setInvoiceToCancel(null);
+    } finally {
+      setInvoiceActionLoading(false);
+    }
+  };
+
+  const confirmDeleteInvoice = async () => {
+    if (!invoiceToDelete) return;
+
+    const target = invoiceToDelete;
+    setInvoiceActionLoading(true);
+    setInvoiceActionError(null);
+    try {
+      await apiFetch(`/invoices/${target.id}`, { method: "DELETE" });
+      setInvoiceToDelete(null);
+      await fetchData();
+    } catch (err) {
+      setInvoiceActionError(
+        err instanceof Error ? err.message : "Failed to delete invoice.",
+      );
+      setInvoiceToDelete(null);
+    } finally {
+      setInvoiceActionLoading(false);
+    }
   };
 
   // Issue Draft Invoice Functionality
@@ -144,6 +195,118 @@ export default function BillingPage() {
     );
   };
 
+  const columns: Column<Invoice>[] = [
+    {
+      header: "Invoice #",
+      accessor: (invoice) => (
+        <span className="font-semibold text-slate-900">
+          {invoice.invoice_number}
+        </span>
+      ),
+    },
+    {
+      header: "Due Date",
+      accessor: (invoice) =>
+        invoice.due_date ? formatBillingDate(invoice.due_date) : "-",
+    },
+    {
+      header: "Total",
+      accessor: (invoice) => (
+        <span className="font-semibold text-slate-900">
+          KES {Number(invoice.total).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      header: "Paid",
+      accessor: (invoice) => (
+        <span className="font-medium text-emerald-600">
+          KES {Number(invoice.amount_paid).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      header: "Balance",
+      accessor: (invoice) => (
+        <span className="font-bold text-slate-900">
+          KES {Number(invoice.balance).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      header: "Status",
+      accessor: (invoice) => getStatusBadge(invoice.status),
+    },
+    {
+      header: "Actions",
+      accessor: (invoice) => (
+        <div className="flex min-w-max flex-wrap items-center justify-end gap-2">
+          {invoice.status === "DRAFT" && (
+            <button
+              onClick={() => handleIssue(invoice)}
+              disabled={issuingId === invoice.id}
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
+            >
+              {issuingId === invoice.id ? "Issuing..." : "Issue"}
+            </button>
+          )}
+          {(invoice.status === "ISSUED" ||
+            invoice.status === "PARTIALLY_PAID") && (
+            <button
+              onClick={() => handlePay(invoice)}
+              className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 transition hover:bg-emerald-100"
+            >
+              Record Payment
+            </button>
+          )}
+          <Link
+            href={`/billing/${invoice.id}`}
+            className="inline-flex items-center rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          >
+            Details
+          </Link>
+          <button
+            onClick={() => handleEdit(invoice)}
+            aria-disabled={invoice.status !== "DRAFT"}
+            title={
+              invoice.status !== "DRAFT"
+                ? "Only draft invoices can be edited"
+                : undefined
+            }
+            className={`text-xs font-semibold ${
+              invoice.status !== "DRAFT"
+                ? "cursor-not-allowed text-slate-400"
+                : "text-blue-600 hover:text-blue-800"
+            }`}
+          >
+            Edit
+          </button>
+          {invoice.status === "CANCELLED" ? (
+            <button
+              onClick={() => {
+                setInvoiceActionError(null);
+                setInvoiceToDelete(invoice);
+              }}
+              className="text-xs font-semibold text-rose-600 hover:text-rose-800"
+            >
+              Delete
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setInvoiceActionError(null);
+                setInvoiceToCancel(invoice);
+              }}
+              className="text-xs font-semibold text-rose-600 hover:text-rose-800"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="p-0 max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -191,100 +354,21 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Invoice Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-        {loading ? (
-          <div className="p-8 text-center text-xs text-slate-500">
-            Loading invoices...
-          </div>
-        ) : filteredInvoices.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-500">
-            No invoices found.
-          </div>
-        ) : (
-          <table className="w-full min-w-170 text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
-              <tr>
-                <th className="p-3">Invoice #</th>
-                <th className="p-3">Due Date</th>
-                <th className="p-3">Total</th>
-                <th className="p-3">Paid</th>
-                <th className="p-3">Balance</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredInvoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-slate-50/50 transition">
-                  <td className="p-3 font-semibold text-slate-900">
-                    {inv.invoice_number}
-                  </td>
-                  <td className="p-3">
-                    {inv.due_date ? formatBillingDate(inv.due_date) : "-"}
-                  </td>
-                  <td className="p-3 font-semibold text-slate-900">
-                    KES {Number(inv.total).toLocaleString()}
-                  </td>
-                  <td className="p-3 text-emerald-600 font-medium">
-                    KES {Number(inv.amount_paid).toLocaleString()}
-                  </td>
-                  <td className="p-3 font-bold text-slate-900">
-                    KES {Number(inv.balance).toLocaleString()}
-                  </td>
-                  <td className="p-3">{getStatusBadge(inv.status)}</td>
-                  <td className="p-3 text-right space-x-2">
-                    {/* Issue Button: Rendered only when status is DRAFT */}
-                    {inv.status === "DRAFT" && (
-                      <button
-                        onClick={() => handleIssue(inv)}
-                        disabled={issuingId === inv.id}
-                        className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs disabled:opacity-50"
-                      >
-                        {issuingId === inv.id ? "Issuing..." : "Issue"}
-                      </button>
-                    )}
+      {invoiceActionError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700"
+        >
+          {invoiceActionError}
+        </div>
+      )}
 
-                    {(inv.status === "ISSUED" ||
-                      inv.status === "PARTIALLY_PAID") && (
-                      <button
-                        onClick={() => handlePay(inv)}
-                        className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 transition"
-                      >
-                        Record Payment
-                      </button>
-                    )}
-
-                    <Link
-                      href={`/billing/${inv.id}`}
-                      className="inline-flex items-center rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
-                    >
-                      Details
-                    </Link>
-
-                    <button
-                      onClick={() => handleEdit(inv)}
-                      aria-disabled={inv.status !== "DRAFT"}
-                      title={
-                        inv.status !== "DRAFT"
-                          ? "Only draft invoices can be edited"
-                          : undefined
-                      }
-                      className={`font-semibold text-xs ${
-                        inv.status !== "DRAFT"
-                          ? "cursor-not-allowed text-slate-400"
-                          : "text-blue-600 hover:text-blue-800"
-                      }`}
-                    >
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={filteredInvoices}
+        loading={loading}
+        emptyMessage="No invoices found."
+      />
 
       {/* Invoice Modal */}
       <InvoiceModal
@@ -314,6 +398,32 @@ export default function BillingPage() {
         preselectedTenantId={invoiceToPay?.tenant_id}
         preselectedInvoiceId={invoiceToPay?.id}
         lockToPreselectedInvoice
+      />
+
+      <DeleteConfirmModal
+        isOpen={invoiceToCancel !== null}
+        onClose={() => setInvoiceToCancel(null)}
+        onConfirm={confirmCancelInvoice}
+        title="Cancel Invoice?"
+        entityName={invoiceToCancel?.invoice_number}
+        description={`Cancel invoice ${invoiceToCancel?.invoice_number || ""}? This action cannot be undone.`}
+        confirmLabel="Cancel Invoice"
+        cancelLabel="Keep Invoice"
+        loadingLabel="Cancelling..."
+        isLoading={invoiceActionLoading}
+      />
+
+      <DeleteConfirmModal
+        isOpen={invoiceToDelete !== null}
+        onClose={() => setInvoiceToDelete(null)}
+        onConfirm={confirmDeleteInvoice}
+        title="Delete Invoice?"
+        entityName={invoiceToDelete?.invoice_number}
+        description={`Permanently delete invoice ${invoiceToDelete?.invoice_number || ""}? This action cannot be undone.`}
+        confirmLabel="Delete Invoice"
+        cancelLabel="Keep Invoice"
+        loadingLabel="Deleting..."
+        isLoading={invoiceActionLoading}
       />
 
       <InfoModal
