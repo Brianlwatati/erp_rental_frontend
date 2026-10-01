@@ -200,7 +200,7 @@ export function UnitModal({
       if (unit) {
         // Edit existing unit
         await apiFetch(`/units/${unit.id}`, {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify(payload),
         });
       } else {

@@ -139,6 +139,23 @@ export function PaymentModal({
     });
   };
 
+  const handleAmountChange = (amount: number) => {
+    setFormData((prev) => ({ ...prev, amount }));
+
+    let remainingAmount = Math.max(amount, 0);
+    setAllocations(
+      tenantInvoices.flatMap((invoice) => {
+        const invoiceBalance = Math.max(Number(invoice.balance) || 0, 0);
+        const allocatedAmount = Math.min(remainingAmount, invoiceBalance);
+        remainingAmount -= allocatedAmount;
+
+        return allocatedAmount > 0
+          ? [{ invoiceId: invoice.id, amount: allocatedAmount }]
+          : [];
+      }),
+    );
+  };
+
   const totalAllocated = useMemo(() => {
     return allocations.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
   }, [allocations]);
@@ -279,10 +296,7 @@ export function PaymentModal({
                 min="0.01"
                 value={formData.amount}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    amount: parseFloat(e.target.value) || 0,
-                  })
+                  handleAmountChange(parseFloat(e.target.value) || 0)
                 }
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
               />
