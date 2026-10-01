@@ -67,7 +67,7 @@ export function LeaseModal({
     endDate: "",
     monthlyRent: "" as number | string,
     depositAmount: 0,
-    include_deposit_in_first_invoice: false,
+    includeDepositInFirstInvoice: false,
     billingDay: 1,
     status: "ACTIVE",
     notes: "",
@@ -100,7 +100,7 @@ export function LeaseModal({
           endDate: lease.end_date ? lease.end_date.split("T")[0] : "",
           monthlyRent: lease.monthly_rent ?? "",
           depositAmount: lease.deposit_amount ?? 0,
-          include_deposit_in_first_invoice:
+          includeDepositInFirstInvoice:
             lease.include_deposit_in_first_invoice ?? false,
           billingDay: lease.billing_day ?? 1,
           status: lease.status || "ACTIVE",
@@ -127,7 +127,7 @@ export function LeaseModal({
           endDate: "",
           monthlyRent: "",
           depositAmount: 0,
-          include_deposit_in_first_invoice: false,
+          includeDepositInFirstInvoice: false,
           billingDay: 1,
           status: "ACTIVE",
           notes: "",
