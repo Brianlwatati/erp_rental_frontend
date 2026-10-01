@@ -2,6 +2,8 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { apiFetch } from "@/lib/api_client";
 import { Property, Building, Unit, UnitType } from "@/types/property";
 import { PropertyOverviewTab } from "@/components/property/property-overview";
@@ -26,24 +28,32 @@ export default function PropertyDetailPage({
   const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const [propRes, bldRes, typesRes] = await Promise.all([
         apiFetch<Property>(`/properties/${id}`),
         apiFetch<Building[]>(`/buildings/property/${id}`),
-        // apiFetch<Unit[]>(`/properties/${id}/units`),
         apiFetch<UnitType[]>("/unit-types"),
       ]);
 
+      const fetchedBuildings = bldRes.data || [];
+      const unitResponses = await Promise.all(
+        fetchedBuildings.map((building) =>
+          apiFetch<Unit[]>(`/units/building/${building.id}`).catch(() => ({
+            data: [],
+          })),
+        ),
+      );
+
       setProperty(propRes.data);
-      setBuildings(bldRes.data);
-      // setUnits(unitsRes.data);
+      setBuildings(fetchedBuildings);
+      setUnits(unitResponses.flatMap((response) => response.data || []));
       setUnitTypes(typesRes.data);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -67,6 +77,13 @@ export default function PropertyDetailPage({
       {/* Header */}
       <div className="flex flex-col lg:flex-row gap-3 justify-between items-start">
         <div>
+          <Link
+            href="/properties"
+            className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-slate-900"
+          >
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            All properties
+          </Link>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900">
               {property.name}
@@ -112,10 +129,19 @@ export default function PropertyDetailPage({
       {activeTab === "overview" && (
         <PropertyOverviewTab property={{ ...property, buildings, units }} />
       )}
-      {activeTab === "buildings" && <PropertyBuildingsTab propertyId={id} />}
+      {activeTab === "buildings" && (
+        <PropertyBuildingsTab
+          propertyId={id}
+          onDataChanged={() => fetchData(false)}
+        />
+      )}
       {activeTab === "unit-types" && <PropertyUnitTypesTab />}
       {activeTab === "units" && (
-        <PropertyUnitsTab buildings={buildings} unitTypes={unitTypes} />
+        <PropertyUnitsTab
+          buildings={buildings}
+          unitTypes={unitTypes}
+          onDataChanged={() => fetchData(false)}
+        />
       )}
     </div>
   );

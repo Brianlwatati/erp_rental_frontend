@@ -6,7 +6,13 @@ import { Building } from "@/types/property";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { BuildingModal } from "./building-modal";
 
-export function PropertyBuildingsTab({ propertyId }: { propertyId: string }) {
+export function PropertyBuildingsTab({
+  propertyId,
+  onDataChanged,
+}: {
+  propertyId: string;
+  onDataChanged: () => void | Promise<void>;
+}) {
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
@@ -41,6 +47,11 @@ export function PropertyBuildingsTab({ propertyId }: { propertyId: string }) {
   const handleNew = () => {
     setSelectedBuilding(null);
     setIsModalOpen(true);
+  };
+
+  const handleSaveSuccess = async () => {
+    await fetchBuildings();
+    await onDataChanged();
   };
 
   const columns: Column<Building>[] = [
@@ -120,7 +131,7 @@ export function PropertyBuildingsTab({ propertyId }: { propertyId: string }) {
           building={selectedBuilding}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSuccess={fetchBuildings}
+          onSuccess={handleSaveSuccess}
         />
       )}
     </div>

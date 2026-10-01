@@ -66,6 +66,8 @@ export function UnitModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [descriptionManuallyEdited, setDescriptionManuallyEdited] =
+    useState(false);
 
   const selectedBuilding = buildings.find(
     (building) => building.id === formData.buildingId,
@@ -84,17 +86,28 @@ export function UnitModal({
         description: unit.description || "",
       });
     } else {
+      const buildingId = defaultBuildingId || buildings[0]?.id || "";
+      const initialBuilding = buildings.find(
+        (building) => building.id === buildingId,
+      );
       setFormData({
-        buildingId: defaultBuildingId || buildings[0]?.id || "",
+        buildingId,
         unitTypeId: "",
         unitNumber: "",
         floor: "",
         monthlyRent: "",
         depositAmount: 0,
         status: "VACANT",
-        description: "",
+        description: initialBuilding
+          ? `This unit is located in ${initialBuilding.name}${
+              initialBuilding.property_name
+                ? ` at ${initialBuilding.property_name}`
+                : ""
+            }.`
+          : "",
       });
     }
+    setDescriptionManuallyEdited(false);
     setErrors({});
     setServerError(null);
   }, [unit, isOpen, defaultBuildingId, buildings]);
@@ -107,7 +120,33 @@ export function UnitModal({
     >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "description") {
+      setDescriptionManuallyEdited(true);
+    }
+
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      const shouldUpdateDescription =
+        !unit &&
+        !descriptionManuallyEdited &&
+        ["buildingId", "unitNumber", "floor"].includes(name);
+
+      if (shouldUpdateDescription) {
+        const building = buildings.find((item) => item.id === next.buildingId);
+        if (building) {
+          const unitLabel = next.unitNumber
+            ? `Unit ${next.unitNumber}`
+            : "This unit";
+          const floorText = next.floor !== "" ? ` on floor ${next.floor}` : "";
+          const propertyText = building.property_name
+            ? ` at ${building.property_name}`
+            : "";
+          next.description = `${unitLabel} is located${floorText} in ${building.name}${propertyText}.`;
+        }
+      }
+
+      return next;
+    });
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }

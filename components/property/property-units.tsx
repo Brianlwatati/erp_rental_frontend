@@ -10,9 +10,11 @@ import { UnitModal } from "./unit-modal";
 export function PropertyUnitsTab({
   buildings,
   unitTypes,
+  onDataChanged,
 }: {
   buildings: Building[];
   unitTypes: UnitType[];
+  onDataChanged: () => void | Promise<void>;
 }) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,10 @@ export function PropertyUnitsTab({
   const handleNew = () => {
     setSelectedUnit(null);
     setIsModalOpen(true);
+  };
+
+  const handleSaveSuccess = () => {
+    void onDataChanged();
   };
 
   const filteredUnits =
@@ -192,7 +198,7 @@ export function PropertyUnitsTab({
           unit={selectedUnit}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSuccess={fetchUnits}
+          onSuccess={handleSaveSuccess}
           defaultBuildingId={
             selectedBuildingFilter !== "ALL"
               ? selectedBuildingFilter
