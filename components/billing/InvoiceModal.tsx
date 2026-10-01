@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { apiFetch } from "@/lib/api_client";
 import { Lease, LeaseCharge } from "@/types/lease";
 import { Tenant } from "@/types/tenant";
-import { Invoice, InvoiceCreateInput } from "@/types/invoice";
+import { Invoice, InvoiceCreateInput, InvoiceItem } from "@/types/invoice";
 import { InvoiceItemFields, InvoiceItemInput } from "./InvoiceItemFields";
 import {
   InvoiceDetailsFields,
@@ -79,6 +79,24 @@ function validateInvoicePayload(
     : { success: true, data: payload };
 }
 
+function toInvoiceItemInput(item: InvoiceItem): InvoiceItemInput {
+  const quantity = Number(item.quantity) || 1;
+  const fallbackUnitPrice =
+    item.amount != null ? Number(item.amount) / quantity : 0;
+  const unitPrice =
+    Number(item.unitPrice ?? item.unit_price ?? fallbackUnitPrice) || 0;
+  const amount = Number(item.amount ?? quantity * unitPrice);
+
+  return {
+    id: item.id,
+    description: item.description,
+    itemType: item.itemType || item.item_type || "RENT",
+    quantity,
+    unitPrice,
+    amount: Number.isFinite(amount) ? amount : quantity * unitPrice,
+  };
+}
+
 interface InvoiceModalProps {
   invoice: Invoice | null;
   leases: Lease[];
@@ -129,6 +147,7 @@ export function InvoiceModal({
   // Sync state when modal opens or editing
   useEffect(() => {
     if (isOpen) {
+      const requestVersion = ++chargeFetchVersion.current;
       if (invoice) {
         setFormData({
           tenantId: invoice.tenant_id || "",
@@ -144,18 +163,58 @@ export function InvoiceModal({
         });
 
         if (invoice.items && invoice.items.length > 0) {
-          setItems(
-            invoice.items.map((item) => ({
-              description: item.description,
-              itemType: item.itemType || (item as any).item_type || "RENT",
-              quantity: item.quantity,
-              unitPrice: item.unitPrice || (item as any).unit_price || 0,
-              amount:
-                (item.quantity || 1) *
-                (item.unitPrice || (item as any).unit_price || 0),
-            })),
-          );
+          setItems(invoice.items.map(toInvoiceItemInput));
+        } else {
+          setItems([]);
         }
+
+        setLoadingCharges(true);
+        setChargeLoadError(null);
+
+        const loadInvoiceDetails = async () => {
+          try {
+            const response = await apiFetch<Invoice>(`/invoices/${invoice.id}`);
+            if (requestVersion !== chargeFetchVersion.current) return;
+
+            const details = { ...invoice, ...response.data };
+            setFormData({
+              tenantId: details.tenant_id || "",
+              leaseId: details.lease_id || "",
+              invoiceNumber: details.invoice_number || "",
+              invoiceDate: formatBillingDateInput(details.invoice_date || ""),
+              dueDate: formatBillingDateInput(details.due_date || ""),
+              periodStart: formatBillingDateInput(details.period_start || ""),
+              periodEnd: formatBillingDateInput(details.period_end || ""),
+              discount: Number(details.discount) || 0,
+              tax: Number(details.tax) || 0,
+              notes: details.notes || "",
+            });
+
+            if (details.items?.length) {
+              setItems(details.items.map(toInvoiceItemInput));
+            } else if (!invoice.items?.length) {
+              setItems([]);
+              setChargeLoadError(
+                "No saved line items were found for this invoice. Close and reopen it to retry loading.",
+              );
+            }
+          } catch (err) {
+            if (requestVersion !== chargeFetchVersion.current) return;
+            console.error("Failed to load invoice details for editing:", err);
+            if (!invoice.items?.length) {
+              setItems([]);
+              setChargeLoadError(
+                "Unable to load saved invoice items. Close and reopen this invoice to retry.",
+              );
+            }
+          } finally {
+            if (requestVersion === chargeFetchVersion.current) {
+              setLoadingCharges(false);
+            }
+          }
+        };
+
+        loadInvoiceDetails();
       } else {
         const today = formatBillingDateInput(new Date());
         const [year, month] = today.split("-").map(Number);
@@ -185,6 +244,7 @@ export function InvoiceModal({
             amount: 0,
           },
         ]);
+        setLoadingCharges(false);
       }
       setErrors({});
       setServerError(null);

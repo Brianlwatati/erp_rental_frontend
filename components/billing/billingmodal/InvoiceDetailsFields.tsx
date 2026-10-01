@@ -64,7 +64,7 @@ export function InvoiceDetailsFields({
         </select>
         {loadingCharges && (
           <p className="mt-1 text-xs text-slate-500">
-            Loading recurring charges...
+            Loading invoice line items...
           </p>
         )}
         {chargeLoadError && (
