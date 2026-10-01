@@ -21,3 +21,17 @@ export interface Notification {
   read_at: string | null;
   is_read: boolean;
 }
+
+export interface NotificationReadReceipt {
+  notification_id: string;
+  user_id: string;
+  read_at: string;
+}
+
+export interface UnreadNotificationCount {
+  count: number;
+}
+
+export interface MarkAllNotificationsReadResult {
+  markedRead: number;
+}

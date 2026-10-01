@@ -5,10 +5,7 @@ import { useEffect, useState } from "react";
 import { apiFetch, getCurrentUser, logoutUser } from "@/lib/api_client";
 import { User } from "@/types/api";
 import Link from "next/link";
-
-type UnreadCountResponse =
-  | number
-  | { count?: number; unread_count?: number; unreadCount?: number };
+import { UnreadNotificationCount } from "@/types/notification";
 
 export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [user, setUser] = useState<User | null>(null);
@@ -24,12 +21,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   }, []);
 
   useEffect(() => {
-    apiFetch<UnreadCountResponse>("/notifications/unread-count")
+    apiFetch<UnreadNotificationCount>("/notifications/unread-count")
       .then(({ data }) => {
-        const count =
-          typeof data === "number"
-            ? data
-            : (data.count ?? data.unread_count ?? data.unreadCount ?? 0);
+        const count = typeof data === "number" ? data : (data.count ?? 0);
         setUnreadCount(Math.max(0, count));
       })
       .catch((err) => {
@@ -80,7 +74,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
         >
           <Bell aria-hidden="true" className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-white">
+            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-white">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
