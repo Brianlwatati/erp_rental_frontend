@@ -278,13 +278,13 @@ export function LeaseFormFields({
           htmlFor="notes"
           className="block text-xs font-semibold text-slate-700 mb-1"
         >
-          Notes / Special Terms
+          Lease Description / Special Terms
         </label>
         <textarea
           id="notes"
           name="notes"
           rows={2}
-          placeholder="Additional stipulations or remarks..."
+          placeholder="A description is generated from the lease details and can be edited."
           value={formData.notes}
           onChange={onChange}
           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"

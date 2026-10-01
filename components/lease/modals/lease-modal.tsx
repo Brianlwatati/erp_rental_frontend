@@ -26,6 +26,72 @@ const leaseFormSchema = z.object({
     .default("ACTIVE"),
   notes: z.string().optional(),
 });
+interface LeaseDescriptionDetails {
+  tenantFirstName: string;
+  tenantLastName: string;
+  unitNumber: string;
+  buildingName: string;
+  propertyName: string;
+  startDate: string;
+  endDate: string;
+  monthlyRent: number | string;
+  depositAmount: number;
+}
+
+function formatDescriptionDate(date: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function generateLeaseDescription(details: LeaseDescriptionDetails) {
+  const tenantName = [details.tenantFirstName, details.tenantLastName]
+    .filter(Boolean)
+    .join(" ");
+  const location = [
+    details.unitNumber ? `Unit ${details.unitNumber}` : "",
+    details.buildingName,
+    details.propertyName,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  if (!tenantName && !location && !details.startDate) return "";
+
+  const sentences = [
+    `${tenantName || "The tenant"} begins a new chapter at ${location || "the selected property"}.`,
+  ];
+
+  if (details.startDate) {
+    sentences.push(
+      details.endDate
+        ? `This lease runs from ${formatDescriptionDate(details.startDate)} through ${formatDescriptionDate(details.endDate)}.`
+        : `This lease begins on ${formatDescriptionDate(details.startDate)}.`,
+    );
+  }
+
+  const financialDetails: string[] = [];
+  if (details.monthlyRent !== "") {
+    financialDetails.push(
+      `monthly rent of KES ${Number(details.monthlyRent || 0).toLocaleString()}`,
+    );
+  }
+  if (details.depositAmount > 0) {
+    financialDetails.push(
+      `a security deposit of KES ${Number(details.depositAmount).toLocaleString()}`,
+    );
+  }
+  if (financialDetails.length > 0) {
+    sentences.push(
+      `The agreement provides for ${financialDetails.join(" and ")}.`,
+    );
+  }
+
+  return sentences.join(" ");
+}
 
 interface LeaseModalProps {
   lease: Lease | null;
@@ -76,6 +142,13 @@ export function LeaseModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [descriptionManuallyEdited, setDescriptionManuallyEdited] =
+    useState(false);
+
+  const withGeneratedDescription = (next: typeof formData) => {
+    if (lease || descriptionManuallyEdited) return next;
+    return { ...next, notes: generateLeaseDescription(next) };
+  };
 
   // Sync initial state whenever lease or open status changes
   useEffect(() => {
@@ -133,6 +206,7 @@ export function LeaseModal({
           notes: "",
         });
       }
+      setDescriptionManuallyEdited(false);
       setErrors({});
       setServerError(null);
     }
@@ -186,31 +260,35 @@ export function LeaseModal({
     );
 
     setSelectedBuildingId(buildingId);
-    setFormData((prev) => ({
-      ...prev,
-      unitId: "",
-      unitNumber: "",
-      buildingId,
-      buildingName: selectedBuilding?.name || "",
-      buildingCode: selectedBuilding?.code || "",
-      propertyName: selectedBuilding?.property_name || "",
-      propertyCode: selectedBuilding?.property_code || "",
-      monthlyRent: "",
-      depositAmount: 0,
-    }));
+    setFormData((prev) =>
+      withGeneratedDescription({
+        ...prev,
+        unitId: "",
+        unitNumber: "",
+        buildingId,
+        buildingName: selectedBuilding?.name || "",
+        buildingCode: selectedBuilding?.code || "",
+        propertyName: selectedBuilding?.property_name || "",
+        propertyCode: selectedBuilding?.property_code || "",
+        monthlyRent: "",
+        depositAmount: 0,
+      }),
+    );
   };
 
   const handleUnitSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const unitId = e.target.value;
     const selectedUnit = units.find((u) => u.id === unitId);
 
-    setFormData((prev) => ({
-      ...prev,
-      unitId,
-      unitNumber: selectedUnit?.unit_number || "",
-      monthlyRent: selectedUnit?.monthly_rent ?? prev.monthlyRent,
-      depositAmount: selectedUnit?.deposit_amount ?? prev.depositAmount,
-    }));
+    setFormData((prev) =>
+      withGeneratedDescription({
+        ...prev,
+        unitId,
+        unitNumber: selectedUnit?.unit_number || "",
+        monthlyRent: selectedUnit?.monthly_rent ?? prev.monthlyRent,
+        depositAmount: selectedUnit?.deposit_amount ?? prev.depositAmount,
+      }),
+    );
 
     if (errors.unitId) {
       setErrors((prev) => ({ ...prev, unitId: "" }));
@@ -223,14 +301,16 @@ export function LeaseModal({
     const tenantId = e.target.value;
     const selectedTenant = tenants.find((tenant) => tenant.id === tenantId);
 
-    setFormData((prev) => ({
-      ...prev,
-      tenantId,
-      tenantFirstName: selectedTenant?.first_name || "",
-      tenantLastName: selectedTenant?.last_name || "",
-      tenantEmail: selectedTenant?.email || "",
-      tenantPhone: selectedTenant?.phone || "",
-    }));
+    setFormData((prev) =>
+      withGeneratedDescription({
+        ...prev,
+        tenantId,
+        tenantFirstName: selectedTenant?.first_name || "",
+        tenantLastName: selectedTenant?.last_name || "",
+        tenantEmail: selectedTenant?.email || "",
+        tenantPhone: selectedTenant?.phone || "",
+      }),
+    );
 
     if (errors.tenantId) {
       setErrors((prev) => ({ ...prev, tenantId: "" }));
@@ -247,7 +327,14 @@ export function LeaseModal({
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
         : value;
-    setFormData((prev) => ({ ...prev, [name]: nextValue }));
+    if (name === "notes") {
+      setDescriptionManuallyEdited(true);
+      setFormData((prev) => ({ ...prev, notes: value }));
+    } else {
+      setFormData((prev) =>
+        withGeneratedDescription({ ...prev, [name]: nextValue }),
+      );
+    }
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }

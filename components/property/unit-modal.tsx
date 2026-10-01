@@ -191,7 +191,7 @@ export function UnitModal({
         unitNumber: unitData.unitNumber,
         monthlyRent: unitData.monthlyRent,
         depositAmount: unitData.depositAmount,
-        status: unitData.status,
+        status: unit ? unitData.status : "VACANT",
         ...(unitData.unitTypeId && { unitTypeId: unitData.unitTypeId }),
         ...(unitData.floor !== undefined && { floor: unitData.floor }),
         ...(unitData.description && { description: unitData.description }),
@@ -369,9 +369,9 @@ export function UnitModal({
               <select
                 id="status"
                 name="status"
+                disabled
                 value={formData.status}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
               >
                 <option value="VACANT">VACANT</option>
                 <option value="OCCUPIED">OCCUPIED</option>
