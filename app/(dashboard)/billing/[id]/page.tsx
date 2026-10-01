@@ -117,7 +117,27 @@ export default function BillingDetailsPage() {
   const { bill, tenant, lease } = data;
 
   return (
-    <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-6 text-slate-800 bg-slate-50/50 min-h-screen">
+    <div className="w-full min-w-0 max-w-5xl mx-auto overflow-x-clip space-y-6 p-4 text-slate-800 bg-slate-50/50 min-h-screen sm:p-8 print:overflow-x-visible">
+      {/* CSS to hide everything outside #printable-section when printing */}
+      <style jsx global>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            #printable-section,
+            #printable-section * {
+              visibility: visible;
+            }
+            #printable-section {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+            }
+          }
+        `}
+      </style>
       {/* Top Header & Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
@@ -169,207 +189,212 @@ export default function BillingDetailsPage() {
       </div>
 
       {/* Main Invoice Card */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-8 space-y-8">
-        {/* Invoice Metadata Header */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-          <div>
-            <span className="text-slate-400 block uppercase font-semibold text-[10px]">
-              Invoice Date
-            </span>
-            <span className="font-bold text-slate-800 mt-0.5 block">
-              {formatBillingDate(bill.invoice_date)}
-            </span>
+      <div
+        id="printable-section"
+        className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-8 print:overflow-visible print:p-0 print:m-0 print:border-none print:rounded-none print:shadow-none"
+      >
+        <div className="min-w-180 space-y-8 lg:min-w-0 print:min-w-0">
+          {/* Invoice Metadata Header */}
+          <div className="grid  grid-cols-4 gap-6 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+            <div>
+              <span className="text-slate-400 block uppercase font-semibold text-[10px]">
+                Invoice Date
+              </span>
+              <span className="font-bold text-slate-800 mt-0.5 block">
+                {formatBillingDate(bill.invoice_date)}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-400 block uppercase font-semibold text-[10px]">
+                Due Date
+              </span>
+              <span className="font-bold text-slate-800 mt-0.5 block">
+                {formatBillingDate(bill.due_date)}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-400 block uppercase font-semibold text-[10px]">
+                Billing Period Start
+              </span>
+              <span className="font-medium text-slate-800 mt-0.5 block">
+                {formatBillingDate(bill.period_start)}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-400 block uppercase font-semibold text-[10px]">
+                Billing Period End
+              </span>
+              <span className="font-medium text-slate-800 mt-0.5 block">
+                {formatBillingDate(bill.period_end)}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-slate-400 block uppercase font-semibold text-[10px]">
-              Due Date
-            </span>
-            <span className="font-bold text-slate-800 mt-0.5 block">
-              {formatBillingDate(bill.due_date)}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-400 block uppercase font-semibold text-[10px]">
-              Billing Period Start
-            </span>
-            <span className="font-medium text-slate-800 mt-0.5 block">
-              {formatBillingDate(bill.period_start)}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-400 block uppercase font-semibold text-[10px]">
-              Billing Period End
-            </span>
-            <span className="font-medium text-slate-800 mt-0.5 block">
-              {formatBillingDate(bill.period_end)}
-            </span>
-          </div>
-        </div>
 
-        {/* Tenant & Lease Information Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-          {/* Tenant Details */}
-          <div className="border border-slate-200 rounded-lg p-5 space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">
-              Billed To (Tenant)
-            </h3>
-            {tenant ? (
-              <div className="space-y-1">
-                <Link
-                  href={`/tenants/${tenant.id}`}
-                  className="text-sm font-bold text-slate-900 hover:text-blue-600 block transition-colors"
-                >
-                  {tenant.first_name} {tenant.last_name}
-                </Link>
-                <p className="text-slate-600">{tenant.email}</p>
-                <p className="text-slate-600">{tenant.phone}</p>
-                {tenant.national_id && (
-                  <p className="text-slate-500 font-mono text-[11px] mt-1">
-                    ID / Passport: {tenant.national_id}
+          {/* Tenant & Lease Information Section */}
+          <div className="grid grid-cols-2 gap-6 text-xs">
+            {/* Tenant Details */}
+            <div className="border border-slate-200 rounded-lg p-5 space-y-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">
+                Billed To (Tenant)
+              </h3>
+              {tenant ? (
+                <div className="space-y-1">
+                  <Link
+                    href={`/tenants/${tenant.id}`}
+                    className="text-sm font-bold text-slate-900 hover:text-blue-600 block transition-colors"
+                  >
+                    {tenant.first_name} {tenant.last_name}
+                  </Link>
+                  <p className="text-slate-600">{tenant.email}</p>
+                  <p className="text-slate-600">{tenant.phone}</p>
+                  {tenant.national_id && (
+                    <p className="text-slate-500 font-mono text-[11px] mt-1">
+                      ID / Passport: {tenant.national_id}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-slate-500 italic">
+                  Tenant ID: <span className="font-mono">{bill.tenant_id}</span>
+                </p>
+              )}
+            </div>
+
+            {/* Lease Details */}
+            <div className="border border-slate-200 rounded-lg p-5 space-y-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">
+                Lease & Property Information
+              </h3>
+              {lease ? (
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-slate-900">
+                    {lease.property_name} • Unit {lease.unit_number}
                   </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-slate-500 italic">
-                Tenant ID: <span className="font-mono">{bill.tenant_id}</span>
-              </p>
-            )}
+                  <p className="text-slate-600">
+                    Building: {lease.building_name} ({lease.building_code})
+                  </p>
+                  <p className="text-slate-500 font-mono text-[11px] mt-1">
+                    Lease No: {lease.lease_number}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-slate-500 italic">
+                  Lease ID: <span className="font-mono">{bill.lease_id}</span>
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Lease Details */}
-          <div className="border border-slate-200 rounded-lg p-5 space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">
-              Lease & Property Information
+          {/* Invoice Line Items */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Invoice Items
             </h3>
-            {lease ? (
-              <div className="space-y-1">
-                <p className="text-sm font-bold text-slate-900">
-                  {lease.property_name} • Unit {lease.unit_number}
-                </p>
-                <p className="text-slate-600">
-                  Building: {lease.building_name} ({lease.building_code})
-                </p>
-                <p className="text-slate-500 font-mono text-[11px] mt-1">
-                  Lease No: {lease.lease_number}
-                </p>
-              </div>
-            ) : (
-              <p className="text-slate-500 italic">
-                Lease ID: <span className="font-mono">{bill.lease_id}</span>
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Invoice Line Items */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Invoice Items
-          </h3>
-          <div className="overflow-x-auto border border-slate-200 rounded-lg">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-4">Description</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4 text-center">Qty</th>
-                  <th className="py-3 px-4 text-right">Unit Price</th>
-                  <th className="py-3 px-4 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {bill.items && bill.items.length > 0 ? (
-                  bill.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50">
-                      <td className="py-3 px-4 font-medium text-slate-900">
-                        {item.description}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="inline-block px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase">
-                          {item.item_type}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center font-mono">
-                        {Number(item.quantity)}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-slate-600">
-                        {formatCurrency(item.unit_price)}
-                      </td>
-                      <td className="py-3 px-4 text-right font-bold text-slate-900">
-                        {formatCurrency(item.amount)}
+            <div className="overflow-x-auto border border-slate-200 rounded-lg">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-4">Description</th>
+                    <th className="py-3 px-4">Type</th>
+                    <th className="py-3 px-4 text-center">Qty</th>
+                    <th className="py-3 px-4 text-right">Unit Price</th>
+                    <th className="py-3 px-4 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {bill.items && bill.items.length > 0 ? (
+                    bill.items.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50/50">
+                        <td className="py-3 px-4 font-medium text-slate-900">
+                          {item.description}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-block px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase">
+                            {item.item_type}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center font-mono">
+                          {Number(item.quantity)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-600">
+                          {formatCurrency(item.unit_price)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-bold text-slate-900">
+                          {formatCurrency(item.amount)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="py-6 text-center text-slate-400 italic"
+                      >
+                        No items listed on this invoice.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="py-6 text-center text-slate-400 italic"
-                    >
-                      No items listed on this invoice.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Totals Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pt-4 border-t border-slate-200">
-          <div className="text-xs space-y-1 text-slate-500 max-w-xs">
-            {bill.notes && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
-                <span className="font-bold block mb-0.5">Notes:</span>
-                {bill.notes}
-              </div>
-            )}
-          </div>
-
-          <div className="w-full sm:w-72 space-y-2 text-xs">
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-500">Subtotal:</span>
-              <span className="font-semibold text-slate-900">
-                {formatCurrency(bill.subtotal)}
-              </span>
+                  )}
+                </tbody>
+              </table>
             </div>
-            {Number(bill.discount || 0) > 0 && (
-              <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-700">
-                <span>Discount:</span>
-                <span className="font-semibold">
-                  -{formatCurrency(bill.discount)}
-                </span>
-              </div>
-            )}
-            {Number(bill.tax || 0) > 0 && (
+          </div>
+
+          {/* Totals Section */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pt-4 border-t border-slate-200">
+            <div className="text-xs space-y-1 text-slate-500 max-w-xs">
+              {bill.notes && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
+                  <span className="font-bold block mb-0.5">Notes:</span>
+                  {bill.notes}
+                </div>
+              )}
+            </div>
+
+            <div className="w-full sm:w-72 space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Tax:</span>
+                <span className="text-slate-500">Subtotal:</span>
                 <span className="font-semibold text-slate-900">
-                  {formatCurrency(bill.tax)}
+                  {formatCurrency(bill.subtotal)}
                 </span>
               </div>
-            )}
-            <div className="flex justify-between py-1.5 border-b border-slate-200 font-bold text-sm text-slate-900">
-              <span>Total Amount:</span>
-              <span>{formatCurrency(bill.total)}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-700">
-              <span>Amount Paid:</span>
-              <span className="font-semibold">
-                {formatCurrency(bill.amount_paid)}
-              </span>
-            </div>
-            <div className="flex justify-between py-2 text-sm font-black">
-              <span className="text-slate-700">Balance Due:</span>
-              <span
-                className={
-                  Number(bill.balance) > 0
-                    ? "text-rose-600"
-                    : "text-emerald-600"
-                }
-              >
-                {formatCurrency(bill.balance)}
-              </span>
+              {Number(bill.discount || 0) > 0 && (
+                <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-700">
+                  <span>Discount:</span>
+                  <span className="font-semibold">
+                    -{formatCurrency(bill.discount)}
+                  </span>
+                </div>
+              )}
+              {Number(bill.tax || 0) > 0 && (
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Tax:</span>
+                  <span className="font-semibold text-slate-900">
+                    {formatCurrency(bill.tax)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between py-1.5 border-b border-slate-200 font-bold text-sm text-slate-900">
+                <span>Total Amount:</span>
+                <span>{formatCurrency(bill.total)}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-700">
+                <span>Amount Paid:</span>
+                <span className="font-semibold">
+                  {formatCurrency(bill.amount_paid)}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 text-sm font-black">
+                <span className="text-slate-700">Balance Due:</span>
+                <span
+                  className={
+                    Number(bill.balance) > 0
+                      ? "text-rose-600"
+                      : "text-emerald-600"
+                  }
+                >
+                  {formatCurrency(bill.balance)}
+                </span>
+              </div>
             </div>
           </div>
         </div>

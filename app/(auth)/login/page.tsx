@@ -34,7 +34,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-dvh bg-slate-950 px-4 py-8 sm:px-6 sm:py-12">
+    <main className="min-h-dvh h-full bg-slate-950 px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-md flex-col justify-center">
         <div className="mb-7 text-center sm:mb-8">
           <div className="mx-auto flex w-fit items-center rounded-2xl border border-slate-800 bg-slate-900 px-4 py-2 font-bold text-xl tracking-tight text-white shadow-lg">

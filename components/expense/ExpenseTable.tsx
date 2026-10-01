@@ -1,5 +1,6 @@
 import { Expense } from "@/types/expense";
 import { Column, DataTable } from "@/components/ui/data-table";
+import Link from "next/link";
 
 interface ExpenseTableProps {
   expenses: Expense[];
@@ -33,22 +34,22 @@ export function ExpenseTable({
       accessor: (expense) =>
         new Date(expense.expense_date).toLocaleDateString(),
     },
-    {
-      header: "Description",
-      accessor: (expense) => (
-        <span className="font-medium text-slate-800">
-          {expense.description}
-        </span>
-      ),
-    },
-    {
-      header: "Method",
-      accessor: (expense) => (
-        <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-semibold">
-          {expense.payment_method || "N/A"}
-        </span>
-      ),
-    },
+    // {
+    //   header: "Description",
+    //   accessor: (expense) => (
+    //     <span className="font-medium text-slate-800">
+    //       {expense.description}
+    //     </span>
+    //   ),
+    // },
+    // {
+    //   header: "Method",
+    //   accessor: (expense) => (
+    //     <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-semibold">
+    //       {expense.payment_method || "N/A"}
+    //     </span>
+    //   ),
+    // },
     {
       header: "Ref Code",
       accessor: (expense) => (
@@ -84,12 +85,20 @@ export function ExpenseTable({
     {
       header: "Actions",
       accessor: (expense) => (
-        <button
-          onClick={() => onEdit(expense)}
-          className="text-blue-600 hover:text-blue-800 font-semibold"
-        >
-          Edit
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/expenses/${expense.id}`}
+            className="text-xs font-semibold text-slate-600 hover:text-slate-900"
+          >
+            View
+          </Link>
+          <button
+            onClick={() => onEdit(expense)}
+            className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+          >
+            Edit
+          </button>
+        </div>
       ),
     },
   ];

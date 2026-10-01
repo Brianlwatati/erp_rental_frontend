@@ -42,7 +42,13 @@ export interface Expense {
   unit_number?: string;
   unit_id?: string;
   expense_category_id?: string;
+  expense_category_name?: string;
+  expense_category_code?: string;
   vendor_id?: string;
+  vendor_name: string;
+  vendor_contact_person: string;
+  vendor_phone: string;
+  vendor_email: string;
   expense_number: string;
   description: string;
   amount: number;
