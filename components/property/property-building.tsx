@@ -85,7 +85,7 @@ export function PropertyBuildingsTab({ propertyId }: { propertyId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col lg:flex-row gap-3 justify-between items-start lg:items-center">
         <div>
           <h3 className="text-lg font-bold text-slate-900">
             Registered Buildings

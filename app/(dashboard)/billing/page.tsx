@@ -291,7 +291,8 @@ export default function BillingPage() {
             >
               Delete
             </button>
-          ) : (
+          ) : invoice.status !== "PAID" &&
+            invoice.status !== "PARTIALLY_PAID" ? (
             <button
               onClick={() => {
                 setInvoiceActionError(null);
@@ -301,7 +302,7 @@ export default function BillingPage() {
             >
               Cancel
             </button>
-          )}
+          ) : null}
         </div>
       ),
     },

@@ -83,10 +83,10 @@ export default function LeasesPage() {
       header: "Lease #",
       accessor: (row) => (
         <div>
-          <span className="font-bold text-slate-900 block">
+          <span className="font-bold text-slate-900 block text-nowrap">
             {row.lease_number}
           </span>
-          <span className="text-[11px] text-slate-500 font-mono">
+          <span className="text-[11px] text-slate-500 font-mono text-nowrap ">
             {new Date(row.start_date).toLocaleDateString()} &ndash;{" "}
             {row.end_date
               ? new Date(row.end_date).toLocaleDateString()
@@ -102,10 +102,10 @@ export default function LeasesPage() {
           <span className="font-semibold text-slate-800 block">
             Unit {row.unit_number || row.unit_id.slice(0, 6)}
           </span>
-          <span className="text-xs text-slate-500">
-            {row.building_name || "—"}
+          <span className="text-xs text-slate-500 text-nowrap">
+            {row.building_name || "—"} /
           </span>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-slate-400 text-nowrap">
             {" "}
             {row.property_name || "—"}
           </span>
