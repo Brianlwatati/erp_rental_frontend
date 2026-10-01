@@ -28,6 +28,7 @@ const navItems = [
   { name: "Payments", href: "/payments", icon: CreditCard },
   // { name: "Maintenance", href: "/maintenance", icon: Wrench },
   { name: "Expenses", href: "/expenses", icon: Receipt },
+  { name: "Notifications", href: "/notifications", icon: Wrench },
 ];
 
 interface SidebarProps {
