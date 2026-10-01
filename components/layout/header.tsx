@@ -1,13 +1,19 @@
 "use client";
 
-import { Menu, LogOut } from "lucide-react";
+import { Bell, Menu, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getCurrentUser, logoutUser } from "@/lib/api_client";
+import { apiFetch, getCurrentUser, logoutUser } from "@/lib/api_client";
 import { User } from "@/types/api";
+import Link from "next/link";
+
+type UnreadCountResponse =
+  | number
+  | { count?: number; unread_count?: number; unreadCount?: number };
 
 export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [user, setUser] = useState<User | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -15,6 +21,20 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     });
 
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    apiFetch<UnreadCountResponse>("/notifications/unread-count")
+      .then(({ data }) => {
+        const count =
+          typeof data === "number"
+            ? data
+            : (data.count ?? data.unread_count ?? data.unreadCount ?? 0);
+        setUnreadCount(Math.max(0, count));
+      })
+      .catch((err) => {
+        console.error("Failed to fetch unread notification count:", err);
+      });
   }, []);
 
   const handleLogout = () => {
@@ -48,6 +68,24 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <Link
+          href="/notifications"
+          aria-label={
+            unreadCount > 0
+              ? `Notifications, ${unreadCount} unread`
+              : "Notifications"
+          }
+          title="Notifications"
+          className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+        >
+          <Bell aria-hidden="true" className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Link>
+
         <div className="flex items-center gap-2 sm:border-r sm:border-slate-200 sm:pr-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white ring-4 ring-blue-50">
             {initials}
