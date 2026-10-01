@@ -111,7 +111,7 @@ export default function LeaseDetailPagePrint() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col lg:flex-row items-center gap-3">
           {/* View Mode Switcher */}
           <div className="bg-slate-100 p-1 rounded-lg flex text-xs font-semibold text-slate-600">
             <button
@@ -173,18 +173,20 @@ export default function LeaseDetailPagePrint() {
       {/* Printable Document Container */}
       <div
         id="printable-section"
-        className="border border-slate-200 rounded-xl p-8 shadow-sm space-y-8 bg-white print:border-none print:p-0 print:shadow-none"
+        className="overflow-x-auto border border-slate-200 rounded-xl p-8 shadow-sm bg-white print:overflow-visible print:border-none print:p-0 print:shadow-none"
       >
-        {/* Summary Sheet */}
-        {(activeTab === "all" || activeTab === "summary") && (
-          <SummaryView lease={lease} charges={charges} />
-        )}
-
-        {/* Legal Contract Clauses */}
-        {lease.include_deposit_in_first_invoice &&
-          (activeTab === "all" || activeTab === "contract") && (
-            <ContractView lease={lease} charges={charges} />
+        <div className="min-w-160 space-y-8 sm:min-w-0 print:min-w-0">
+          {/* Summary Sheet */}
+          {(activeTab === "all" || activeTab === "summary") && (
+            <SummaryView lease={lease} charges={charges} />
           )}
+
+          {/* Legal Contract Clauses */}
+          {lease.include_deposit_in_first_invoice &&
+            (activeTab === "all" || activeTab === "contract") && (
+              <ContractView lease={lease} charges={charges} />
+            )}
+        </div>
       </div>
     </div>
   );
