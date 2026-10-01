@@ -203,11 +203,19 @@ export function InvoiceModal({
     );
   }, [items]);
 
+  const selectedLease = leases.find((lease) => lease.id === formData.leaseId);
+  const firstInvoiceDeposit =
+    !invoice &&
+    selectedLease?.include_deposit_in_first_invoice &&
+    selectedLease.lease_invoice_id == null
+      ? Number(selectedLease.deposit_amount) || 0
+      : 0;
+
   const total = useMemo(() => {
     const disc = Number(formData.discount) || 0;
     const tx = Number(formData.tax) || 0;
-    return Math.max(0, subtotal - disc + tx);
-  }, [subtotal, formData.discount, formData.tax]);
+    return Math.max(0, subtotal - disc + tx) + firstInvoiceDeposit;
+  }, [subtotal, formData.discount, formData.tax, firstInvoiceDeposit]);
 
   // Handle Lease changes and auto-bind Tenant & Rent price
   const handleLeaseChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -399,6 +407,7 @@ export function InvoiceModal({
             notes={formData.notes}
             subtotal={subtotal}
             total={total}
+            displayOnlyDeposit={firstInvoiceDeposit}
             onChange={handleChange}
           />
 

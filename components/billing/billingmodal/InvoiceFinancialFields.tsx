@@ -6,6 +6,7 @@ interface InvoiceFinancialFieldsProps {
   notes: string;
   subtotal: number;
   total: number;
+  displayOnlyDeposit?: number;
   onChange: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
 }
 
@@ -15,6 +16,7 @@ export function InvoiceFinancialFields({
   notes,
   subtotal,
   total,
+  displayOnlyDeposit = 0,
   onChange,
 }: InvoiceFinancialFieldsProps) {
   return (
@@ -49,10 +51,16 @@ export function InvoiceFinancialFields({
         </div>
       </div>
 
-      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs">
+      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-wrap justify-between items-center gap-2 text-xs">
         <span className="text-slate-600">
           Subtotal: KES {subtotal.toLocaleString()}
         </span>
+        {displayOnlyDeposit > 0 && (
+          <span className="text-amber-700">
+            First-invoice deposit (added by backend): KES{" "}
+            {displayOnlyDeposit.toLocaleString()}
+          </span>
+        )}
         <span className="text-slate-600">
           Tax/Disc: +{tax} / -{discount}
         </span>

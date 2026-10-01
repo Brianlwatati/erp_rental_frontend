@@ -178,12 +178,22 @@ export default function LeasesPage() {
           >
             Print
           </Link>
-          <Link
-            href={`/leases/${row.id}`}
-            className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
-          >
-            Details
-          </Link>
+          {row.lease_invoice_id != null ? (
+            <span
+              aria-disabled="true"
+              title="Details are unavailable for invoiced leases"
+              className="cursor-not-allowed text-xs font-semibold text-slate-400"
+            >
+              Details
+            </span>
+          ) : (
+            <Link
+              href={`/leases/${row.id}`}
+              className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
+            >
+              Details
+            </Link>
+          )}
           <button
             onClick={() => handleEdit(row)}
             aria-disabled={row.lease_invoice_id != null}
