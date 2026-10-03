@@ -53,5 +53,8 @@ export interface Unit {
   updated_at: string;
   building_name?: string;
   building_code?: string;
+  property_id?: string;
+  property_name?: string;
+  property_code?: string;
   unit_type?: UnitType;
 }
