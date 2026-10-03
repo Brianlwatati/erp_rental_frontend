@@ -98,7 +98,7 @@ export function UnitLeaseHistory({
                 className="inline-flex cursor-not-allowed items-center gap-1 text-xs font-semibold text-slate-400"
               >
                 <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" />
-                Details
+                Edit Charges
               </span>
             ) : (
               <Link

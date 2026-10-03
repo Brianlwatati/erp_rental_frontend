@@ -236,7 +236,7 @@ export default function LeasesPage() {
               href={`/leases/${row.id}`}
               className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
             >
-              Details
+              Edit Charges
             </Link>
           )}
 
