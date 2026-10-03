@@ -62,7 +62,7 @@ export function PropertyUnitsTab({
         // First check nested relation, fallback to matching unit_type_id / unitTypeId from unitTypes prop
         const typeId = row.unit_type_id;
         const matchedType = unitTypes.find((ut) => ut.id === typeId);
-        const typeName = row.unit_type?.name || matchedType?.name;
+        const typeName = row.unit_type_name || matchedType?.name;
 
         return typeName ? (
           <span className="font-medium text-slate-800">{typeName}</span>
