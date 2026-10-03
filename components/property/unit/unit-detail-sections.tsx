@@ -162,7 +162,7 @@ export function UnitSummaryCards({ unit }: { unit: Unit }) {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               {label}
             </p>
-            <p className="mt-1 break-words text-xl font-bold text-slate-900">
+            <p className="mt-1 wrap-break-word text-xl font-bold text-slate-900">
               {value}
             </p>
           </div>

@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Lock, FileCheck, Printer } from "lucide-react";
+import {
+  Lock,
+  FileCheck,
+  Printer,
+  ExternalLink,
+  Calendar,
+  FileText,
+} from "lucide-react";
 import { apiFetch } from "@/lib/api_client";
 import { Lease } from "@/types/lease";
 import { Building } from "@/types/property";
@@ -79,6 +86,12 @@ export default function LeasesPage() {
     setIsInvoiceModalOpen(true);
   };
 
+  const formatCurrency = (amount?: number) =>
+    new Intl.NumberFormat("en-KE", {
+      style: "currency",
+      currency: "KES",
+    }).format(amount || 0);
+
   const filteredLeases = leases.filter((lease) => {
     const tenantName = `${lease.tenant_first_name || ""} ${
       lease.tenant_last_name || ""
@@ -139,10 +152,6 @@ export default function LeasesPage() {
           <span className="text-xs text-slate-500 text-nowrap">
             {row.building_name || "—"}
           </span>
-          {/* <span className="text-[11px] text-slate-400 text-nowrap">
-            {" "}
-            {row.property_name || "—"}
-          </span> */}
         </div>
       ),
     },
@@ -167,21 +176,7 @@ export default function LeasesPage() {
       header: "Monthly Rent",
       accessor: (row) => (
         <span className="font-bold text-slate-900">
-          {new Intl.NumberFormat("en-KE", {
-            style: "currency",
-            currency: "KES",
-          }).format(row.monthly_rent || 0)}
-        </span>
-      ),
-    },
-    {
-      header: "Charges",
-      accessor: (row) => (
-        <span className="font-bold text-slate-900">
-          {new Intl.NumberFormat("en-KE", {
-            style: "currency",
-            currency: "KES",
-          }).format((row.rentpluscharges || 0) - (row.monthly_rent || 0))}
+          {formatCurrency(row.monthly_rent)}
         </span>
       ),
     },
@@ -190,12 +185,6 @@ export default function LeasesPage() {
       accessor: (row) => (
         <div className="flex flex-col gap-1 items-start">
           <StatusBadge status={row.status} />
-          {/* {row.lease_invoice_id != null && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
-              <FileCheck className="w-3 h-3 text-emerald-600" />
-              Invoiced
-            </span>
-          )} */}
         </div>
       ),
     },
@@ -264,6 +253,110 @@ export default function LeasesPage() {
     },
   ];
 
+  const renderExpandedRow = (lease: Lease) => {
+    const extraCharges =
+      (lease.rentpluscharges || 0) - (lease.monthly_rent || 0);
+
+    const includesDeposit = Boolean(lease.include_deposit_in_first_invoice);
+    const depositAmount = Number(lease.deposit_amount) || 0;
+    const totalRentAndCharges = Number(lease.rentpluscharges) || 0;
+
+    // Total payable calculation based on include_deposit_in_first_invoice flag
+    const totalInitialPayable = includesDeposit
+      ? totalRentAndCharges + depositAmount
+      : totalRentAndCharges;
+
+    return (
+      <div className="p-4 sm:p-5 text-xs text-slate-700 space-y-4 bg-slate-50/90 border-l-4 border-blue-500">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Extra Charges Breakdown */}
+          <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+              Extra Charges
+            </span>
+            <span className="text-sm font-bold text-slate-800 block">
+              {formatCurrency(extraCharges)}
+            </span>
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              Rent + Extra: {formatCurrency(totalRentAndCharges)}
+            </span>
+          </div>
+
+          {/* Total Initial Payable */}
+          <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+              Total Payable
+            </span>
+            <span className="text-sm font-bold text-slate-900 block">
+              {formatCurrency(totalInitialPayable)}
+            </span>
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              {includesDeposit
+                ? `Includes Deposit (${formatCurrency(depositAmount)})`
+                : `Excludes Deposit (${formatCurrency(depositAmount)})`}
+            </span>
+          </div>
+
+          {/* Billing Terms & Deposit Inclusion */}
+          <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+              Billing Terms
+            </span>
+            <div className="flex items-center gap-1.5 text-slate-800 font-semibold">
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <span>Day {lease.billing_day || "1"} of month</span>
+            </div>
+            <span className="text-[11px] text-slate-500 block mt-1">
+              Deposit in First Invoice:{" "}
+              <strong className="text-slate-700">
+                {includesDeposit ? "Yes" : "No"}
+              </strong>
+            </span>
+          </div>
+
+          {/* Invoice Reference */}
+          <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+                Invoice Reference
+              </span>
+              {lease.lease_invoice_id ? (
+                <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                  <FileCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Invoiced</span>
+                </div>
+              ) : (
+                <span className="text-slate-400 italic">Not invoiced yet</span>
+              )}
+            </div>
+
+            {lease.lease_invoice_id && (
+              <Link
+                href={`/billing/${lease.lease_invoice_id}`}
+                className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                View Linked Invoice
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Description / Notes */}
+        {lease.notes && (
+          <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+              Description / Terms Notes
+            </span>
+            <p className="text-slate-600 text-xs leading-relaxed">
+              {lease.notes}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="p-0 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -278,7 +371,7 @@ export default function LeasesPage() {
 
         <button
           onClick={handleNew}
-          className="px-4 py-2 bg-blue-600 text-white font-medium text-xs rounded-lg hover:bg-blue-700 transition shadow-sm"
+          className="px-4 py-2 bg-blue-600 text-white font-medium text-xs rounded-lg hover:bg-blue-700 transition shadow-sm cursor-pointer"
         >
           + Create Lease
         </button>
@@ -316,6 +409,7 @@ export default function LeasesPage() {
           columns={columns}
           data={filteredLeases}
           emptyMessage="No lease agreements found."
+          renderExpandedRow={renderExpandedRow}
         />
       )}
 
