@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { apiFetch } from "@/lib/api_client";
+import { useState } from "react";
 import { Unit, Building, UnitType } from "@/types/property";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/badge";
@@ -10,54 +9,18 @@ import { UnitModal } from "./unit-modal";
 export function PropertyUnitsTab({
   buildings,
   unitTypes,
+  units,
   onDataChanged,
 }: {
   buildings: Building[];
   unitTypes: UnitType[];
+  units: Unit[];
   onDataChanged: () => void | Promise<void>;
 }) {
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedBuildingFilter, setSelectedBuildingFilter] =
     useState<string>("ALL");
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const fetchUnits = useCallback(async () => {
-    if (buildings.length === 0) {
-      setUnits([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      // Fetch units for each building via /units/building/:buildingId
-      const promises = buildings.map((building) =>
-        apiFetch<Unit[]>(`/units/building/${building.id}`)
-          .then((res) =>
-            res.data.map((unit) => ({
-              ...unit,
-              building,
-            })),
-          )
-          .catch(() => [] as Unit[]),
-      );
-
-      const results = await Promise.all(promises);
-      const allUnits = results.flat();
-      setUnits(allUnits);
-    } catch (err) {
-      console.error("Failed to load units:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [buildings]);
-
-  useEffect(() => {
-    fetchUnits();
-  }, [fetchUnits]);
 
   const handleEdit = (unit: Unit) => {
     setSelectedUnit(unit);
@@ -97,7 +60,7 @@ export function PropertyUnitsTab({
       header: "Type",
       accessor: (row) => {
         // First check nested relation, fallback to matching unit_type_id / unitTypeId from unitTypes prop
-        const typeId = row.unit_type_id || (row as any).unitTypeId;
+        const typeId = row.unit_type_id;
         const matchedType = unitTypes.find((ut) => ut.id === typeId);
         const typeName = row.unit_type?.name || matchedType?.name;
 
@@ -175,21 +138,15 @@ export function PropertyUnitsTab({
         </button>
       </div>
 
-      {loading ? (
-        <div className="p-8 text-center text-slate-500 text-sm">
-          Loading units...
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={filteredUnits}
-          emptyMessage={
-            buildings.length === 0
-              ? "Please create a building first before adding units."
-              : "No units registered for this property."
-          }
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={filteredUnits}
+        emptyMessage={
+          buildings.length === 0
+            ? "Please create a building first before adding units."
+            : "No units registered for this property."
+        }
+      />
 
       {isModalOpen && (
         <UnitModal

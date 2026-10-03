@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useCallback, useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { apiFetch } from "@/lib/api_client";
 import { Property, Building, Unit, UnitType } from "@/types/property";
 import { PropertyOverviewTab } from "@/components/property/property-overview";
-import { PropertyBuildingsTab } from "@/components/property/property-building";
+import { PropertyBuildingsTab } from "@/components/property/building/property-building";
 import { PropertyUnitsTab } from "@/components/property/property-units";
 import { PropertyUnitTypesTab } from "@/components/property/property-unit-types";
 
@@ -27,39 +27,52 @@ export default function PropertyDetailPage({
   const [units, setUnits] = useState<Unit[]>([]);
   const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async (showLoading = true) => {
-    try {
-      if (showLoading) setLoading(true);
-      const [propRes, bldRes, typesRes] = await Promise.all([
-        apiFetch<Property>(`/properties/${id}`),
-        apiFetch<Building[]>(`/buildings/property/${id}`),
-        apiFetch<UnitType[]>("/unit-types"),
-      ]);
+  const fetchAllData = useCallback(
+    async (showLoading = true) => {
+      if (!id) return;
 
-      const fetchedBuildings = bldRes.data || [];
-      const unitResponses = await Promise.all(
-        fetchedBuildings.map((building) =>
-          apiFetch<Unit[]>(`/units/building/${building.id}`).catch(() => ({
-            data: [],
-          })),
-        ),
-      );
+      try {
+        if (showLoading) setLoading(true);
+        setError(null);
 
-      setProperty(propRes.data);
-      setBuildings(fetchedBuildings);
-      setUnits(unitResponses.flatMap((response) => response.data || []));
-      setUnitTypes(typesRes.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  };
+        const [propertyRes, buildingsRes, typeRes, unitsRes] =
+          await Promise.all([
+            apiFetch<Property>(`/properties/${id}`),
+            apiFetch<Building[]>(`/buildings/property/${id}`),
+            apiFetch<UnitType[]>("/unit-types"),
+            apiFetch<Unit[]>(`/units/property/${id}`),
+          ]);
+
+        setProperty(propertyRes.data);
+        setBuildings(buildingsRes.data || []);
+        setUnitTypes(typeRes.data || []);
+        setUnits(unitsRes.data || []);
+      } catch (err: unknown) {
+        console.error("Failed to load property profile:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load property record.",
+        );
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [id],
+  );
 
   useEffect(() => {
-    fetchData();
-  }, [id]);
+    let isCurrent = true;
+    void Promise.resolve().then(() => {
+      if (isCurrent) return fetchAllData();
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [fetchAllData]);
 
   if (loading)
     return (
@@ -69,7 +82,9 @@ export default function PropertyDetailPage({
     );
   if (!property)
     return (
-      <div className="p-8 text-center text-rose-500">Property not found.</div>
+      <div className="p-8 text-center text-rose-500">
+        {error || "Property not found."}
+      </div>
     );
 
   return (
@@ -132,7 +147,7 @@ export default function PropertyDetailPage({
       {activeTab === "buildings" && (
         <PropertyBuildingsTab
           propertyId={id}
-          onDataChanged={() => fetchData(false)}
+          onDataChanged={() => fetchAllData(false)}
         />
       )}
       {activeTab === "unit-types" && <PropertyUnitTypesTab />}
@@ -140,7 +155,8 @@ export default function PropertyDetailPage({
         <PropertyUnitsTab
           buildings={buildings}
           unitTypes={unitTypes}
-          onDataChanged={() => fetchData(false)}
+          units={units}
+          onDataChanged={() => fetchAllData(false)}
         />
       )}
     </div>

@@ -114,14 +114,14 @@ export default function TenantPage() {
   const activeLeaseCount = leases.filter(
     (lease) => lease.status === "ACTIVE",
   ).length;
-  const outstandingBalance = invoices.reduce(
-    (total, invoice) => total + Number(invoice.balance || 0),
+  const totalInvoiced = invoices.reduce(
+    (total, invoice) => total + Number(invoice.total || 0),
     0,
   );
-  const totalPaid = invoices.reduce(
-    (total, invoice) => total + Number(invoice.amount_paid || 0),
-    0,
-  );
+  const totalPaid = payments
+    .filter((payment) => payment.status === "POSTED")
+    .reduce((total, payment) => total + Number(payment.amount || 0), 0);
+  const outstandingBalance = totalInvoiced - totalPaid;
 
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 text-slate-800 bg-slate-50/50 min-h-screen">
@@ -246,7 +246,9 @@ export default function TenantPage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {invoices.length}
             </p>
-            <p className="mt-1 text-xs text-slate-600">All recorded invoices</p>
+            <p className="mt-1 text-xs text-slate-600">
+              Amount invoiced: {formatCurrency(totalInvoiced)}
+            </p>
           </div>
           <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4">
             <p className="text-[10px] font-bold uppercase tracking-wider text-amber-800">

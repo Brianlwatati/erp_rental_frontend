@@ -43,7 +43,8 @@ export interface Unit {
   building_id: string;
   unit_type_id?: string;
   unit_number: string;
-  floor?: number;
+  floor: number;
+  grid_column?: number;
   monthly_rent: number;
   deposit_amount: number;
   status: "VACANT" | "OCCUPIED" | "RESERVED" | "MAINTENANCE" | "INACTIVE";

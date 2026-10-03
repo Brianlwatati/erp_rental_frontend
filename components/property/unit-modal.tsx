@@ -15,6 +15,11 @@ const unitFormSchema = z.object({
       val === "" || val === null || val === undefined ? undefined : Number(val),
     z.number().int().min(0, "Floor must be 0 or greater").optional(),
   ),
+  gridColumn: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? undefined : Number(val),
+    z.number().int().min(0, "Grid column must be 0 or greater").optional(),
+  ),
   monthlyRent: z.preprocess(
     (val) => (val === "" || val === null ? undefined : Number(val)),
     z.number().min(0, "Rent must be positive"),
@@ -30,8 +35,6 @@ const unitFormSchema = z.object({
   description: z.string().optional(),
 });
 
-type UnitFormData = z.infer<typeof unitFormSchema>;
-
 interface UnitModalProps {
   buildings: Building[];
   unitTypes: UnitType[];
@@ -40,6 +43,8 @@ interface UnitModalProps {
   onClose: () => void;
   onSuccess: () => void;
   defaultBuildingId?: string;
+  defaultFloor?: number;
+  defaultGridColumn?: number;
 }
 
 export function UnitModal({
@@ -50,13 +55,16 @@ export function UnitModal({
   onClose,
   onSuccess,
   defaultBuildingId,
+  defaultFloor,
+  defaultGridColumn,
 }: UnitModalProps) {
   const [formData, setFormData] = useState({
     buildingId:
       unit?.building_id || defaultBuildingId || buildings[0]?.id || "",
     unitTypeId: unit?.unit_type_id || "",
     unitNumber: unit?.unit_number || "",
-    floor: unit?.floor ?? "",
+    floor: unit?.floor ?? defaultFloor ?? "",
+    gridColumn: unit?.grid_column ?? defaultGridColumn ?? "",
     monthlyRent: unit?.monthly_rent ?? "",
     depositAmount: unit?.deposit_amount ?? 0,
     status: unit?.status || "VACANT",
@@ -74,43 +82,61 @@ export function UnitModal({
   );
 
   useEffect(() => {
-    if (unit) {
-      setFormData({
-        buildingId: unit.building_id,
-        unitTypeId: unit.unit_type_id || "",
-        unitNumber: unit.unit_number || "",
-        floor: unit.floor ?? "",
-        monthlyRent: unit.monthly_rent ?? "",
-        depositAmount: unit.deposit_amount ?? 0,
-        status: unit.status || "VACANT",
-        description: unit.description || "",
-      });
-    } else {
-      const buildingId = defaultBuildingId || buildings[0]?.id || "";
-      const initialBuilding = buildings.find(
-        (building) => building.id === buildingId,
-      );
-      setFormData({
-        buildingId,
-        unitTypeId: "",
-        unitNumber: "",
-        floor: "",
-        monthlyRent: "",
-        depositAmount: 0,
-        status: "VACANT",
-        description: initialBuilding
-          ? `This unit is located in ${initialBuilding.name}${
-              initialBuilding.property_name
-                ? ` at ${initialBuilding.property_name}`
-                : ""
-            }.`
-          : "",
-      });
-    }
-    setDescriptionManuallyEdited(false);
-    setErrors({});
-    setServerError(null);
-  }, [unit, isOpen, defaultBuildingId, buildings]);
+    let isCurrent = true;
+    void Promise.resolve().then(() => {
+      if (!isCurrent) return;
+
+      if (unit) {
+        setFormData({
+          buildingId: unit.building_id,
+          unitTypeId: unit.unit_type_id || "",
+          unitNumber: unit.unit_number || "",
+          floor: unit.floor ?? "",
+          gridColumn: unit.grid_column ?? "",
+          monthlyRent: unit.monthly_rent ?? "",
+          depositAmount: unit.deposit_amount ?? 0,
+          status: unit.status || "VACANT",
+          description: unit.description || "",
+        });
+      } else {
+        const buildingId = defaultBuildingId || buildings[0]?.id || "";
+        const initialBuilding = buildings.find(
+          (building) => building.id === buildingId,
+        );
+        setFormData({
+          buildingId,
+          unitTypeId: "",
+          unitNumber: "",
+          floor: defaultFloor ?? "",
+          gridColumn: defaultGridColumn ?? "",
+          monthlyRent: "",
+          depositAmount: 0,
+          status: "VACANT",
+          description: initialBuilding
+            ? `This unit is located in ${initialBuilding.name}${
+                initialBuilding.property_name
+                  ? ` at ${initialBuilding.property_name}`
+                  : ""
+              }.`
+            : "",
+        });
+      }
+      setDescriptionManuallyEdited(false);
+      setErrors({});
+      setServerError(null);
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    unit,
+    isOpen,
+    defaultBuildingId,
+    defaultFloor,
+    defaultGridColumn,
+    buildings,
+  ]);
 
   if (!isOpen) return null;
 
@@ -194,6 +220,9 @@ export function UnitModal({
         status: unit ? unitData.status : "VACANT",
         ...(unitData.unitTypeId && { unitTypeId: unitData.unitTypeId }),
         ...(unitData.floor !== undefined && { floor: unitData.floor }),
+        ...(unitData.gridColumn !== undefined && {
+          gridColumn: unitData.gridColumn,
+        }),
         ...(unitData.description && { description: unitData.description }),
       };
 
@@ -213,8 +242,10 @@ export function UnitModal({
 
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setServerError(err.message || "Failed to save unit.");
+    } catch (err: unknown) {
+      setServerError(
+        err instanceof Error ? err.message : "Failed to save unit.",
+      );
     } finally {
       setLoading(false);
     }
@@ -356,6 +387,24 @@ export function UnitModal({
               {errors.floor && (
                 <p className="mt-1 text-xs text-rose-600">{errors.floor}</p>
               )}
+            </div>
+
+            {/* Grid Column */}
+            <div>
+              <label
+                htmlFor="gridColumn"
+                className="block text-xs font-semibold text-slate-700 mb-1"
+              >
+                Grid Column (0-based)
+              </label>
+              <input
+                id="gridColumn"
+                name="gridColumn"
+                type="number"
+                readOnly
+                value={formData.gridColumn}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 text-slate-600"
+              />
             </div>
 
             {/* Status */}
