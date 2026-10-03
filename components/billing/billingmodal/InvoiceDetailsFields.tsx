@@ -22,6 +22,7 @@ interface InvoiceDetailsFieldsProps {
   errors: Record<string, string>;
   loadingCharges: boolean;
   chargeLoadError: string | null;
+  isEditing: boolean;
   onLeaseChange: ChangeEventHandler<HTMLSelectElement>;
   onChange: ChangeEventHandler<
     HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -35,6 +36,7 @@ export function InvoiceDetailsFields({
   errors,
   loadingCharges,
   chargeLoadError,
+  isEditing,
   onLeaseChange,
   onChange,
 }: InvoiceDetailsFieldsProps) {
@@ -48,7 +50,8 @@ export function InvoiceDetailsFields({
           name="leaseId"
           value={formData.leaseId}
           onChange={onLeaseChange}
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
+          disabled={isEditing}
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
         >
           <option value="">Choose Active Lease</option>
           {leases.map((lease) => (
@@ -83,7 +86,8 @@ export function InvoiceDetailsFields({
           name="tenantId"
           value={formData.tenantId}
           onChange={onChange}
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
+          disabled={isEditing}
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
         >
           <option value="">Choose Tenant</option>
           {tenants.map((tenant) => (
@@ -101,6 +105,7 @@ export function InvoiceDetailsFields({
         name="invoiceDate"
         label="Invoice Date"
         value={formData.invoiceDate}
+        disabled={isEditing}
         onChange={onChange}
       />
       <DateField
@@ -117,6 +122,7 @@ export function InvoiceDetailsFields({
         value={formData.periodStart}
         error={errors.periodStart}
         required
+        disabled={isEditing}
         onChange={onChange}
       />
       <DateField
@@ -125,6 +131,7 @@ export function InvoiceDetailsFields({
         value={formData.periodEnd}
         error={errors.periodEnd}
         required
+        disabled={isEditing}
         onChange={onChange}
       />
     </div>
@@ -137,6 +144,7 @@ interface DateFieldProps {
   value: string;
   error?: string;
   required?: boolean;
+  disabled?: boolean;
   onChange: ChangeEventHandler<HTMLInputElement>;
 }
 
@@ -146,6 +154,7 @@ function DateField({
   value,
   error,
   required = false,
+  disabled = false,
   onChange,
 }: DateFieldProps) {
   return (
@@ -157,8 +166,10 @@ function DateField({
         type="date"
         name={name}
         value={value}
+        required={required}
+        disabled={disabled}
         onChange={onChange}
-        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
+        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
       />
       {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}
     </div>

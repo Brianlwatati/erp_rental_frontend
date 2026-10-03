@@ -15,6 +15,7 @@ interface InvoiceItemFieldsProps {
   items: InvoiceItemInput[];
   onChange: (items: InvoiceItemInput[]) => void;
   errors?: Record<string, string>;
+  readOnly?: boolean;
 }
 
 const ITEM_TYPES = [
@@ -34,6 +35,7 @@ export function InvoiceItemFields({
   items,
   onChange,
   errors = {},
+  readOnly = false,
 }: InvoiceItemFieldsProps) {
   const handleItemChange = (
     index: number,
@@ -82,7 +84,8 @@ export function InvoiceItemFields({
         <button
           type="button"
           onClick={addItem}
-          className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+          disabled={readOnly}
+          className="text-xs font-semibold text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:text-slate-400"
         >
           + Add Item
         </button>
@@ -106,10 +109,11 @@ export function InvoiceItemFields({
               <div className="col-span-12 sm:col-span-3">
                 <select
                   value={item.itemType}
+                  disabled={readOnly}
                   onChange={(e) =>
                     handleItemChange(index, "itemType", e.target.value)
                   }
-                  className="w-full text-xs p-2 border border-slate-300 rounded-md bg-white"
+                  className="w-full rounded-md border border-slate-300 bg-white p-2 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                 >
                   {ITEM_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -125,10 +129,11 @@ export function InvoiceItemFields({
                   type="text"
                   placeholder="Description"
                   value={item.description}
+                  readOnly={readOnly}
                   onChange={(e) =>
                     handleItemChange(index, "description", e.target.value)
                   }
-                  className="w-full text-xs p-2 border border-slate-300 rounded-md bg-white"
+                  className="w-full rounded-md border border-slate-300 bg-white p-2 text-xs read-only:cursor-not-allowed read-only:bg-slate-100 read-only:text-slate-500"
                 />
               </div>
 
@@ -140,6 +145,7 @@ export function InvoiceItemFields({
                   step="any"
                   placeholder="Qty"
                   value={item.quantity}
+                  disabled={readOnly}
                   onChange={(e) =>
                     handleItemChange(
                       index,
@@ -147,7 +153,7 @@ export function InvoiceItemFields({
                       parseFloat(e.target.value) || 0,
                     )
                   }
-                  className="w-full text-xs p-2 border border-slate-300 rounded-md bg-white"
+                  className="w-full rounded-md border border-slate-300 bg-white p-2 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                 />
               </div>
 
@@ -159,6 +165,7 @@ export function InvoiceItemFields({
                   step="any"
                   placeholder="Unit Price"
                   value={item.unitPrice}
+                  disabled={readOnly}
                   onChange={(e) =>
                     handleItemChange(
                       index,
@@ -166,7 +173,7 @@ export function InvoiceItemFields({
                       parseFloat(e.target.value) || 0,
                     )
                   }
-                  className="w-full text-xs p-2 border border-slate-300 rounded-md bg-white"
+                  className="w-full rounded-md border border-slate-300 bg-white p-2 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                 />
               </div>
 
@@ -178,8 +185,8 @@ export function InvoiceItemFields({
                 <button
                   type="button"
                   onClick={() => removeItem(index)}
-                  disabled={items.length === 1}
-                  className="text-slate-400 hover:text-rose-600 disabled:opacity-30 font-bold ml-2"
+                  disabled={readOnly || items.length === 1}
+                  className="ml-2 font-bold text-slate-400 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   &times;
                 </button>

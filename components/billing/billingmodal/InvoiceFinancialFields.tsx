@@ -7,6 +7,7 @@ interface InvoiceFinancialFieldsProps {
   subtotal: number;
   total: number;
   displayOnlyDeposit?: number;
+  readOnly?: boolean;
   onChange: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
 }
 
@@ -17,6 +18,7 @@ export function InvoiceFinancialFields({
   subtotal,
   total,
   displayOnlyDeposit = 0,
+  readOnly = false,
   onChange,
 }: InvoiceFinancialFieldsProps) {
   return (
@@ -31,8 +33,9 @@ export function InvoiceFinancialFields({
             name="discount"
             min="0"
             value={discount}
+            disabled={readOnly}
             onChange={onChange}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
           />
         </div>
 
@@ -45,8 +48,9 @@ export function InvoiceFinancialFields({
             name="tax"
             min="0"
             value={tax}
+            disabled={readOnly}
             onChange={onChange}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
           />
         </div>
       </div>
@@ -79,7 +83,7 @@ export function InvoiceFinancialFields({
           value={notes}
           onChange={onChange}
           placeholder="Payment instructions or terms..."
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
         />
       </div>
     </>

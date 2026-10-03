@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { Lock, FileCheck, Printer } from "lucide-react";
 import { apiFetch } from "@/lib/api_client";
-import { Lease, LeaseStatus } from "@/types/lease";
-import { Building, Unit } from "@/types/property";
+import { Lease } from "@/types/lease";
+import { Building } from "@/types/property";
 import { Tenant } from "@/types/tenant";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/badge";
+import { InvoiceModal } from "@/components/billing/InvoiceModal";
 import { LeaseModal } from "@/components/lease/modals/lease-modal";
 import InfoModal from "@/components/ui/InfoModal";
 
@@ -19,7 +21,9 @@ export default function LeasesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedLease, setSelectedLease] = useState<Lease | null>(null);
+  const [invoiceLeaseId, setInvoiceLeaseId] = useState<string | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [blockedLease, setBlockedLease] = useState<Lease | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -42,7 +46,14 @@ export default function LeasesPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    let isCurrent = true;
+    void Promise.resolve().then(() => {
+      if (isCurrent) return fetchData();
+    });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [fetchData]);
 
   const handleEdit = (lease: Lease) => {
@@ -57,7 +68,15 @@ export default function LeasesPage() {
 
   const handleNew = () => {
     setSelectedLease(null);
+    setInvoiceLeaseId(undefined);
     setIsModalOpen(true);
+  };
+
+  const handleCreateInvoice = (lease: Lease) => {
+    if (lease.lease_invoice_id != null) return;
+    setSelectedLease(null);
+    setInvoiceLeaseId(lease.id);
+    setIsInvoiceModalOpen(true);
   };
 
   const filteredLeases = leases.filter((lease) => {
@@ -72,8 +91,12 @@ export default function LeasesPage() {
       unitNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       leaseNo.toLowerCase().includes(searchTerm.toLowerCase());
 
+    const isInvoiced = lease.lease_invoice_id != null;
     const matchesStatus =
-      statusFilter === "ALL" || lease.status === statusFilter;
+      statusFilter === "ALL" ||
+      (statusFilter === "INVOICED"
+        ? isInvoiced
+        : lease.status === statusFilter);
 
     return matchesSearch && matchesStatus;
   });
@@ -83,9 +106,20 @@ export default function LeasesPage() {
       header: "Lease #",
       accessor: (row) => (
         <div className="whitespace-nowrap">
-          <span className="font-bold text-slate-900 block">
-            {row.lease_number}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-slate-900 block">
+              {row.lease_number}
+            </span>
+            {row.lease_invoice_id != null && (
+              <span
+                title="This lease has been invoiced and is locked from editing."
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200"
+              >
+                <Lock className="w-2.5 h-2.5 text-amber-600" />
+                Invoiced
+              </span>
+            )}
+          </div>
           <span className="text-[11px] text-slate-500 font-mono">
             {new Date(row.start_date).toLocaleDateString()} &ndash;{" "}
             {row.end_date
@@ -103,12 +137,12 @@ export default function LeasesPage() {
             Unit {row.unit_number || row.unit_id.slice(0, 6)}
           </span>
           <span className="text-xs text-slate-500 text-nowrap">
-            {row.building_name || "—"} /
+            {row.building_name || "—"}
           </span>
-          <span className="text-[11px] text-slate-400 text-nowrap">
+          {/* <span className="text-[11px] text-slate-400 text-nowrap">
             {" "}
             {row.property_name || "—"}
-          </span>
+          </span> */}
         </div>
       ),
     },
@@ -121,11 +155,6 @@ export default function LeasesPage() {
               ? `${row.tenant_first_name || ""} ${row.tenant_last_name || ""}`
               : "—"}
           </span>
-          {/* {(row.tenant_phone) && (
-            <span className="text-xs text-slate-500 block">
-              {row.tenant_phone}
-            </span>
-          )} */}
           {row.tenant_email && (
             <span className="text-xs text-slate-500 block">
               {row.tenant_email}
@@ -146,27 +175,29 @@ export default function LeasesPage() {
       ),
     },
     {
-      header: "Charges ",
+      header: "Charges",
       accessor: (row) => (
         <span className="font-bold text-slate-900">
           {new Intl.NumberFormat("en-KE", {
             style: "currency",
             currency: "KES",
-          }).format(row.rentpluscharges - row.monthly_rent || 0)}
+          }).format((row.rentpluscharges || 0) - (row.monthly_rent || 0))}
         </span>
       ),
     },
-    // {
-    //   header: "Billing Day",
-    //   accessor: (row) => (
-    //     <span className="text-xs font-medium text-slate-700">
-    //       Day {row.billing_day}
-    //     </span>
-    //   ),
-    // },
     {
       header: "Status",
-      accessor: (row) => <StatusBadge status={row.status} />,
+      accessor: (row) => (
+        <div className="flex flex-col gap-1 items-start">
+          <StatusBadge status={row.status} />
+          {/* {row.lease_invoice_id != null && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
+              <FileCheck className="w-3 h-3 text-emerald-600" />
+              Invoiced
+            </span>
+          )} */}
+        </div>
+      ),
     },
     {
       header: "Actions",
@@ -174,16 +205,30 @@ export default function LeasesPage() {
         <div className="flex items-center gap-3">
           <Link
             href={`/leases/${row.id}/print`}
-            className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
           >
+            <Printer aria-hidden="true" className="h-3.5 w-3.5" />
             Print
           </Link>
+
+          {row.lease_invoice_id == null && (
+            <button
+              type="button"
+              onClick={() => handleCreateInvoice(row)}
+              className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline"
+            >
+              <FileCheck aria-hidden="true" className="h-3.5 w-3.5" />
+              Invoice
+            </button>
+          )}
+
           {row.lease_invoice_id != null ? (
             <span
               aria-disabled="true"
-              title="Details are unavailable for invoiced leases"
-              className="cursor-not-allowed text-xs font-semibold text-slate-400"
+              title="Details are unavailable for invoiced leases as they cannot be changed"
+              className="cursor-not-allowed text-xs font-semibold text-slate-400 inline-flex items-center gap-1"
             >
+              <Lock className="w-3 h-3 text-slate-400" />
               Details
             </span>
           ) : (
@@ -194,20 +239,24 @@ export default function LeasesPage() {
               Details
             </Link>
           )}
+
           <button
             onClick={() => handleEdit(row)}
             aria-disabled={row.lease_invoice_id != null}
             title={
               row.lease_invoice_id != null
-                ? "This lease has already been invoiced and cannot be edited"
+                ? "This lease has already been invoiced and cannot be edited or modified"
                 : undefined
             }
-            className={`text-xs font-semibold ${
+            className={`text-xs font-semibold inline-flex items-center gap-1 ${
               row.lease_invoice_id != null
                 ? "cursor-not-allowed text-slate-400"
-                : "text-blue-600 hover:underline"
+                : "text-blue-600 hover:underline cursor-pointer"
             }`}
           >
+            {row.lease_invoice_id != null && (
+              <Lock className="w-3 h-3 text-slate-400" />
+            )}
             Edit
           </button>
         </div>
@@ -252,6 +301,7 @@ export default function LeasesPage() {
           <option value="ALL">All Statuses</option>
           <option value="DRAFT">DRAFT</option>
           <option value="ACTIVE">ACTIVE</option>
+          <option value="INVOICED">INVOICED (Locked)</option>
           <option value="EXPIRED">EXPIRED</option>
           <option value="TERMINATED">TERMINATED</option>
         </select>
@@ -281,13 +331,28 @@ export default function LeasesPage() {
         />
       )}
 
+      {isInvoiceModalOpen && (
+        <InvoiceModal
+          invoice={null}
+          leases={leases}
+          tenants={tenants}
+          isOpen={isInvoiceModalOpen}
+          onClose={() => {
+            setIsInvoiceModalOpen(false);
+            setInvoiceLeaseId(undefined);
+          }}
+          onSuccess={fetchData}
+          defaultLeaseId={invoiceLeaseId}
+        />
+      )}
+
       <InfoModal
         isOpen={blockedLease !== null}
         onClose={() => setBlockedLease(null)}
-        title="Lease already invoiced"
+        title="Lease Already Invoiced"
         description={
           blockedLease
-            ? `Lease ${blockedLease.lease_number} has already been invoiced to the client and can no longer be edited.`
+            ? `Lease ${blockedLease.lease_number} has already been invoiced to the tenant. Invoiced leases are locked and cannot be edited or modified.`
             : ""
         }
       />

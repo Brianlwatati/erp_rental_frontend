@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api_client";
 import { Building as BuildingMy, Unit } from "@/types/property";
 import { Lease } from "@/types/lease";
 import { Tenant } from "@/types/tenant";
+import { InvoiceModal } from "@/components/billing/InvoiceModal";
 import { LeaseModal } from "@/components/lease/modals/lease-modal";
 import { UnitLeaseHistory } from "@/components/property/unit/unit-lease-history";
 import {
@@ -26,6 +27,14 @@ export default function UnitDetailPage({
 
   const [unit, setUnit] = useState<Unit | null>(null);
   const [leases, setLeases] = useState<Lease[]>([]);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceLeaseId, setInvoiceLeaseId] = useState<string | null>(null);
+  const [invoicePreparingLeaseId, setInvoicePreparingLeaseId] = useState<
+    string | null
+  >(null);
+  const [invoiceSetupError, setInvoiceSetupError] = useState<string | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLeaseModalOpen, setIsLeaseModalOpen] = useState(false);
@@ -100,6 +109,27 @@ export default function UnitDetailPage({
     }
   };
 
+  const handleOpenInvoiceModal = async (lease: Lease) => {
+    if (lease.lease_invoice_id != null || invoicePreparingLeaseId) return;
+
+    setInvoicePreparingLeaseId(lease.id);
+    setInvoiceSetupError(null);
+    try {
+      if (tenants.length === 0) {
+        const tenantsRes = await apiFetch<Tenant[]>("/tenants");
+        setTenants(tenantsRes.data || []);
+      }
+      setInvoiceLeaseId(lease.id);
+      setIsInvoiceModalOpen(true);
+    } catch (err: unknown) {
+      setInvoiceSetupError(
+        err instanceof Error ? err.message : "Could not prepare invoice.",
+      );
+    } finally {
+      setInvoicePreparingLeaseId(null);
+    }
+  };
+
   const isVacant = unit?.status === "VACANT";
 
   if (loading) {
@@ -169,7 +199,17 @@ export default function UnitDetailPage({
       <UnitSpecifications unit={unit} />
 
       {/* Associated Leases Section */}
-      <UnitLeaseHistory leases={leases} onEdit={handleOpenLeaseModal} />
+      {invoiceSetupError && (
+        <p role="alert" className="text-xs font-medium text-rose-700">
+          {invoiceSetupError}
+        </p>
+      )}
+      <UnitLeaseHistory
+        leases={leases}
+        onEdit={handleOpenLeaseModal}
+        onInvoice={(lease) => void handleOpenInvoiceModal(lease)}
+        invoicePreparingLeaseId={invoicePreparingLeaseId}
+      />
 
       {isLeaseModalOpen && leaseBuilding.length > 0 && (
         <LeaseModal
@@ -185,6 +225,20 @@ export default function UnitDetailPage({
           onSuccess={() => void fetchData()}
           defaultBuildingId={selectedLease?.building_id || unit.building_id}
           defaultUnitId={selectedLease ? undefined : unit.id}
+        />
+      )}
+      {isInvoiceModalOpen && (
+        <InvoiceModal
+          invoice={null}
+          leases={leases}
+          tenants={tenants}
+          isOpen={isInvoiceModalOpen}
+          onClose={() => {
+            setIsInvoiceModalOpen(false);
+            setInvoiceLeaseId(null);
+          }}
+          onSuccess={() => void fetchData()}
+          defaultLeaseId={invoiceLeaseId || undefined}
         />
       )}
     </div>

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { apiFetch } from "@/lib/api_client";
 import { Lease, LeaseCharge } from "@/types/lease";
 import { Tenant } from "@/types/tenant";
@@ -104,6 +110,7 @@ interface InvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  defaultLeaseId?: string;
 }
 
 export function InvoiceModal({
@@ -113,6 +120,7 @@ export function InvoiceModal({
   isOpen,
   onClose,
   onSuccess,
+  defaultLeaseId,
 }: InvoiceModalProps) {
   const [items, setItems] = useState<InvoiceItemInput[]>([
     {
@@ -217,6 +225,10 @@ export function InvoiceModal({
         loadInvoiceDetails();
       } else {
         const today = formatBillingDateInput(new Date());
+        const defaultLease = leases.find(
+          (lease) =>
+            lease.id === defaultLeaseId && lease.lease_invoice_id == null,
+        );
         const [year, month] = today.split("-").map(Number);
         const firstDay = `${year}-${String(month).padStart(2, "0")}-01`;
         const lastDay = formatBillingDateInput(
@@ -224,8 +236,8 @@ export function InvoiceModal({
         );
 
         setFormData({
-          tenantId: "",
-          leaseId: "",
+          tenantId: defaultLease?.tenant_id || "",
+          leaseId: defaultLease?.id || "",
           invoiceNumber: "",
           invoiceDate: today,
           dueDate: addDaysToBillingDate(today, 7),
@@ -252,7 +264,7 @@ export function InvoiceModal({
     } else {
       chargeFetchVersion.current += 1;
     }
-  }, [invoice, isOpen]);
+  }, [invoice, isOpen, defaultLeaseId, leases]);
 
   // Derived financial summary
   const subtotal = useMemo(() => {
@@ -277,80 +289,104 @@ export function InvoiceModal({
     return Math.max(0, subtotal - disc + tx) + firstInvoiceDeposit;
   }, [subtotal, formData.discount, formData.tax, firstInvoiceDeposit]);
 
-  // Handle Lease changes and auto-bind Tenant & Rent price
-  const handleLeaseChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const leaseId = e.target.value;
-    const selectedLease = leases.find((l) => l.id === leaseId);
-    const requestVersion = ++chargeFetchVersion.current;
+  const selectLease = useCallback(
+    async (leaseId: string) => {
+      const selectedLease = leases.find((l) => l.id === leaseId);
+      const requestVersion = ++chargeFetchVersion.current;
 
-    setFormData((prev) => ({
-      ...prev,
-      leaseId,
-      tenantId: selectedLease?.tenant_id || prev.tenantId,
-    }));
-    setChargeLoadError(null);
+      setFormData((prev) => ({
+        ...prev,
+        leaseId,
+        tenantId: selectedLease?.tenant_id || prev.tenantId,
+      }));
+      setChargeLoadError(null);
 
-    if (!selectedLease) {
-      setLoadingCharges(false);
-      setItems([
-        {
-          description: "Monthly Rent",
-          itemType: "RENT",
-          quantity: 1,
-          unitPrice: 0,
-          amount: 0,
-        },
-      ]);
-      return;
-    }
-
-    const rent = Number(selectedLease.monthly_rent) || 0;
-    const rentItem: InvoiceItemInput = {
-      description: "Monthly Rent",
-      itemType: "RENT",
-      quantity: 1,
-      unitPrice: rent,
-      amount: rent,
-    };
-    setItems([rentItem]);
-    setLoadingCharges(true);
-
-    try {
-      const response = await apiFetch<LeaseCharge[]>(
-        `/leases/${leaseId}/charges`,
-      );
-      if (requestVersion !== chargeFetchVersion.current) return;
-
-      const recurringItems = (response.data || [])
-        .filter((charge) => charge.recurring)
-        .map((charge): InvoiceItemInput => {
-          const chargeType = charge.charge_type.toUpperCase();
-          const supportedTypes = ["UTILITY", "SERVICE", "PARKING", "OTHER"];
-          const amount = Number(charge.amount) || 0;
-
-          return {
-            description: charge.name,
-            itemType: supportedTypes.includes(chargeType)
-              ? chargeType
-              : "OTHER",
-            quantity: 1,
-            unitPrice: amount,
-            amount,
-          };
-        });
-
-      setItems([rentItem, ...recurringItems]);
-    } catch (err) {
-      if (requestVersion !== chargeFetchVersion.current) return;
-      console.error("Failed to load lease charges:", err);
-      setChargeLoadError(
-        "Unable to load lease charges. Select the lease again to retry.",
-      );
-    } finally {
-      if (requestVersion === chargeFetchVersion.current) {
+      if (!selectedLease) {
         setLoadingCharges(false);
+        setItems([
+          {
+            description: "Monthly Rent",
+            itemType: "RENT",
+            quantity: 1,
+            unitPrice: 0,
+            amount: 0,
+          },
+        ]);
+        return;
       }
-    }
+
+      const rent = Number(selectedLease.monthly_rent) || 0;
+      const rentItem: InvoiceItemInput = {
+        description: "Monthly Rent",
+        itemType: "RENT",
+        quantity: 1,
+        unitPrice: rent,
+        amount: rent,
+      };
+      setItems([rentItem]);
+      setLoadingCharges(true);
+
+      try {
+        const response = await apiFetch<LeaseCharge[]>(
+          `/leases/${leaseId}/charges`,
+        );
+        if (requestVersion !== chargeFetchVersion.current) return;
+
+        const chargeItems = (response.data || []).map(
+          (charge): InvoiceItemInput => {
+            const chargeType = charge.charge_type.toUpperCase();
+            const supportedTypes = ["UTILITY", "SERVICE", "PARKING", "OTHER"];
+            const amount = Number(charge.amount) || 0;
+
+            return {
+              description: charge.name,
+              itemType: supportedTypes.includes(chargeType)
+                ? chargeType
+                : "OTHER",
+              quantity: 1,
+              unitPrice: amount,
+              amount,
+            };
+          },
+        );
+
+        setItems([rentItem, ...chargeItems]);
+      } catch (err) {
+        if (requestVersion !== chargeFetchVersion.current) return;
+        console.error("Failed to load lease charges:", err);
+        setChargeLoadError(
+          "Unable to load lease charges. Select the lease again to retry.",
+        );
+      } finally {
+        if (requestVersion === chargeFetchVersion.current) {
+          setLoadingCharges(false);
+        }
+      }
+    },
+    [leases],
+  );
+
+  useEffect(() => {
+    if (!isOpen || invoice || !defaultLeaseId) return;
+
+    let isCurrent = true;
+    const defaultLease = leases.find(
+      (lease) => lease.id === defaultLeaseId && lease.lease_invoice_id == null,
+    );
+    if (!defaultLease) return;
+
+    void Promise.resolve().then(() => {
+      if (isCurrent) return selectLease(defaultLease.id);
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [isOpen, invoice, defaultLeaseId, leases, selectLease]);
+
+  // Handle Lease changes and auto-bind Tenant & Rent price
+  const handleLeaseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    void selectLease(e.target.value);
   };
 
   const handleChange = (
@@ -369,6 +405,35 @@ export function InvoiceModal({
     e.preventDefault();
     setLoading(true);
     setServerError(null);
+
+    if (invoice) {
+      if (!formData.dueDate) {
+        setErrors({ dueDate: "Due date is required." });
+        setLoading(false);
+        return;
+      }
+
+      try {
+        await apiFetch(`/invoices/${invoice.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            dueDate: formData.dueDate,
+            notes: formData.notes,
+          }),
+        });
+        onSuccess();
+        onClose();
+      } catch (err: unknown) {
+        setServerError(
+          err instanceof Error
+            ? err.message
+            : "Failed to update invoice due date.",
+        );
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     const payloadToValidate: InvoiceCreateInput = {
       ...formData,
@@ -398,17 +463,10 @@ export function InvoiceModal({
     }
 
     try {
-      if (invoice) {
-        await apiFetch(`/invoices/${invoice.id}`, {
-          method: "PUT",
-          body: JSON.stringify(validation.data),
-        });
-      } else {
-        await apiFetch("/invoices", {
-          method: "POST",
-          body: JSON.stringify(validation.data),
-        });
-      }
+      await apiFetch("/invoices", {
+        method: "POST",
+        body: JSON.stringify(validation.data),
+      });
 
       onSuccess();
       onClose();
@@ -436,6 +494,12 @@ export function InvoiceModal({
           </button>
         </div>
 
+        {invoice && (
+          <p className="mb-4 text-xs text-slate-500">
+            Only the due date and invoice notes can be changed.
+          </p>
+        )}
+
         {serverError && (
           <div className="mb-4 p-3 rounded-lg bg-rose-50 text-rose-700 text-xs font-medium border border-rose-200">
             {serverError}
@@ -450,6 +514,7 @@ export function InvoiceModal({
             errors={errors}
             loadingCharges={loadingCharges}
             chargeLoadError={chargeLoadError}
+            isEditing={Boolean(invoice)}
             onLeaseChange={handleLeaseChange}
             onChange={handleChange}
           />
@@ -459,6 +524,7 @@ export function InvoiceModal({
             items={items}
             onChange={setItems}
             errors={errors}
+            readOnly={Boolean(invoice)}
           />
 
           <InvoiceFinancialFields
@@ -468,6 +534,7 @@ export function InvoiceModal({
             subtotal={subtotal}
             total={total}
             displayOnlyDeposit={firstInvoiceDeposit}
+            readOnly={Boolean(invoice)}
             onChange={handleChange}
           />
 
