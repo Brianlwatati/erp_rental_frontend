@@ -76,7 +76,7 @@ export function UnitLeaseHistory({
               className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
             >
               <Printer aria-hidden="true" className="h-3.5 w-3.5" />
-              Print
+              View / Print
             </Link>
             {!isIssued && (
               <button
@@ -106,7 +106,7 @@ export function UnitLeaseHistory({
                 className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
               >
                 <FileText aria-hidden="true" className="h-3.5 w-3.5" />
-                Details
+                Edit Charges
               </Link>
             )}
             <button
