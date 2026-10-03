@@ -202,7 +202,7 @@ export default function LeasesPage() {
     {
       header: "Actions",
       accessor: (row) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 whitespace-nowrap">
           <Link
             href={`/leases/${row.id}/print`}
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
