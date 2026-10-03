@@ -98,7 +98,7 @@ export function UnitLeaseHistory({
                 className="inline-flex cursor-not-allowed items-center gap-1 text-xs font-semibold text-slate-400"
               >
                 <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" />
-                Charges
+                L.Charges
               </span>
             ) : (
               <Link
@@ -106,7 +106,7 @@ export function UnitLeaseHistory({
                 className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
               >
                 <FileText aria-hidden="true" className="h-3.5 w-3.5" />
-                Charges
+                L.Charges
               </Link>
             )}
             <button

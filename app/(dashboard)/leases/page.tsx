@@ -229,14 +229,14 @@ export default function LeasesPage() {
               className="cursor-not-allowed text-xs font-semibold text-slate-400 inline-flex items-center gap-1"
             >
               <Lock className="w-3 h-3 text-slate-400" />
-              Charges
+              L.Charges
             </span>
           ) : (
             <Link
               href={`/leases/${row.id}`}
-              className="text-xs font-semibold text-slate-700 hover:text-blue-600 hover:underline"
+              className="text-xs font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900 hover:decoration-blue-700 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
-              Charges
+              L.Charges
             </Link>
           )}
 
