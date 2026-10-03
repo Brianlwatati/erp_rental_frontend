@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Unit, Building, UnitType } from "@/types/property";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/badge";
-import { UnitModal } from "./unit-modal";
+import { UnitModal } from "./unit/unit-modal";
 
 export function PropertyUnitsTab({
   buildings,

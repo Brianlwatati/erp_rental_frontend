@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/lib/api_client";
 import { UnitType } from "@/types/property";
 import { DataTable, Column } from "@/components/ui/data-table";
-import { UnitTypeModal } from "./unit-type-modal";
+import { UnitTypeModal } from "./unit/unit-type-modal";
 
 export function PropertyUnitTypesTab() {
   const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);

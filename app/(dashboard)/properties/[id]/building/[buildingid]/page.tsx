@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { apiFetch } from "@/lib/api_client";
 import { Building, Unit, UnitType } from "@/types/property";
-import { UnitModal } from "@/components/property/unit-modal";
+import { UnitModal } from "@/components/property/unit/unit-modal";
 import { Building2DGrid } from "@/components/property/building/building-2d-grid";
 
 export default function BuildingDetailsPage({
