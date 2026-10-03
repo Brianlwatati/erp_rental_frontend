@@ -42,6 +42,10 @@ export interface Unit {
   id: string;
   building_id: string;
   unit_type_id?: string;
+  unit_type_name?: string;
+  unit_type_code?: string;
+  unit_type_bedrooms?: number;
+  unit_type_bathrooms?: string;
   unit_number: string;
   floor: number;
   grid_column?: number;
@@ -53,8 +57,8 @@ export interface Unit {
   updated_at: string;
   building_name?: string;
   building_code?: string;
+  building_floors?: number;
   property_id?: string;
   property_name?: string;
   property_code?: string;
-  unit_type?: UnitType;
 }

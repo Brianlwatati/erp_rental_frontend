@@ -137,7 +137,9 @@ export default function BuildingDetailsPage({
       <Building2DGrid
         building={building}
         units={units}
-        onUnitClick={(unit) => router.push(`/units/${unit.id}`)}
+        onUnitClick={(unit) =>
+          router.push(`/properties/${unit.property_id}/units/${unit.id}`)
+        }
         onAddUnitClick={openUnitModal}
       />
       <UnitModal

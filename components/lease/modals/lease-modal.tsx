@@ -101,6 +101,8 @@ interface LeaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  defaultBuildingId?: string;
+  defaultUnitId?: string;
 }
 
 export function LeaseModal({
@@ -110,6 +112,8 @@ export function LeaseModal({
   isOpen,
   onClose,
   onSuccess,
+  defaultBuildingId,
+  defaultUnitId,
 }: LeaseModalProps) {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>("");
   const [units, setUnits] = useState<Unit[]>([]);
@@ -180,16 +184,20 @@ export function LeaseModal({
           notes: lease.notes || "",
         });
       } else {
-        setSelectedBuildingId("");
+        const initialBuildingId = defaultBuildingId || "";
+        const initialBuilding = buildings.find(
+          (building) => building.id === initialBuildingId,
+        );
+        setSelectedBuildingId(initialBuildingId);
         setUnits([]);
         setFormData({
           unitId: "",
           unitNumber: "",
-          buildingId: "",
-          buildingName: "",
-          buildingCode: "",
-          propertyName: "",
-          propertyCode: "",
+          buildingId: initialBuildingId,
+          buildingName: initialBuilding?.name || "",
+          buildingCode: initialBuilding?.code || "",
+          propertyName: initialBuilding?.property_name || "",
+          propertyCode: initialBuilding?.property_code || "",
           tenantId: "",
           tenantFirstName: "",
           tenantLastName: "",
@@ -210,7 +218,7 @@ export function LeaseModal({
       setErrors({});
       setServerError(null);
     }
-  }, [lease, isOpen]);
+  }, [lease, isOpen, defaultBuildingId, buildings]);
 
   // Fetch units whenever selectedBuildingId changes
   useEffect(() => {
@@ -231,7 +239,28 @@ export function LeaseModal({
         );
         if (isMounted) {
           const data = response.data;
-          setUnits(Array.isArray(data) ? (data as Unit[]) : []);
+          const availableUnits = Array.isArray(data) ? (data as Unit[]) : [];
+          setUnits(availableUnits);
+
+          const defaultUnit = availableUnits.find(
+            (unit) => unit.id === defaultUnitId,
+          );
+          if (defaultUnit?.status === "VACANT") {
+            setFormData((previous) => {
+              const next = {
+                ...previous,
+                unitId: defaultUnit.id,
+                unitNumber: defaultUnit.unit_number,
+                monthlyRent: defaultUnit.monthly_rent ?? previous.monthlyRent,
+                depositAmount:
+                  defaultUnit.deposit_amount ?? previous.depositAmount,
+              };
+              return {
+                ...next,
+                notes: generateLeaseDescription(next),
+              };
+            });
+          }
         }
       } catch (err: any) {
         if (isMounted) {
@@ -250,7 +279,7 @@ export function LeaseModal({
     return () => {
       isMounted = false;
     };
-  }, [selectedBuildingId, isOpen]);
+  }, [selectedBuildingId, isOpen, defaultUnitId]);
 
   const handleBuildingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     // console.log("Selected building ID:", e.target.value);
