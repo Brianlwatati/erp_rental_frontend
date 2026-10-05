@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { LoaderCircle, RotateCcw, X } from "lucide-react";
 import { apiFetch } from "@/lib/api_client";
 import { Payment } from "@/types/payment";
 import { Column, DataTable } from "@/components/ui/data-table";
@@ -28,6 +29,11 @@ export default function PaymentsPage() {
     Boolean(preselectedInvoiceId || preselectedTenantId),
   );
   const [loading, setLoading] = useState(true);
+  const [paymentToReverse, setPaymentToReverse] = useState<Payment | null>(
+    null,
+  );
+  const [isReversing, setIsReversing] = useState(false);
+  const [reverseError, setReverseError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -65,8 +71,28 @@ export default function PaymentsPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    void Promise.resolve().then(fetchData);
   }, []);
+
+  const confirmReversePayment = async () => {
+    if (!paymentToReverse) return;
+
+    setIsReversing(true);
+    setReverseError(null);
+    try {
+      await apiFetch(`/payments/${paymentToReverse.id}/reverse`, {
+        method: "POST",
+      });
+      setPaymentToReverse(null);
+      await fetchData();
+    } catch (err) {
+      setReverseError(
+        err instanceof Error ? err.message : "Failed to reverse payment.",
+      );
+    } finally {
+      setIsReversing(false);
+    }
+  };
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -113,14 +139,6 @@ export default function PaymentsPage() {
       ),
     },
     {
-      header: "Ref Code",
-      accessor: (payment) => (
-        <span className="font-mono text-slate-600">
-          {payment.reference_number || "—"}
-        </span>
-      ),
-    },
-    {
       header: "Amount",
       accessor: (payment) => (
         <span className="font-bold text-slate-900">
@@ -147,12 +165,27 @@ export default function PaymentsPage() {
     {
       header: "Details",
       accessor: (payment) => (
-        <Link
-          href={`/payments/${payment.id}`}
-          className="text-xs font-semibold text-blue-700 hover:underline"
-        >
-          View details
-        </Link>
+        <div className="flex items-center gap-3 whitespace-nowrap">
+          <Link
+            href={`/payments/${payment.id}`}
+            className="text-xs font-semibold text-blue-700 hover:underline"
+          >
+            View
+          </Link>
+          {payment.status === "POSTED" && (
+            <button
+              type="button"
+              onClick={() => {
+                setReverseError(null);
+                setPaymentToReverse(payment);
+              }}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 hover:underline"
+            >
+              <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
+              Reverse
+            </button>
+          )}
+        </div>
       ),
     },
   ];
@@ -234,6 +267,89 @@ export default function PaymentsPage() {
         preselectedTenantId={preselectedTenantId}
         preselectedInvoiceId={preselectedInvoiceId}
       />
+
+      {paymentToReverse && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isReversing) {
+              setPaymentToReverse(null);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reverse-payment-title"
+            className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-xl"
+          >
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 rounded-full bg-rose-100 p-2.5 text-rose-700">
+                <RotateCcw aria-hidden="true" className="h-6 w-6" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <h2
+                  id="reverse-payment-title"
+                  className="text-lg font-bold text-slate-900"
+                >
+                  Reverse payment?
+                </h2>
+                <p className="text-xs leading-relaxed text-slate-600">
+                  This will reverse payment{" "}
+                  <span className="font-semibold text-slate-800">
+                    {paymentToReverse.payment_number}
+                  </span>{" "}
+                  for KES {paymentToReverse.amount.toLocaleString()}. This
+                  action cannot be undone.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                disabled={isReversing}
+                onClick={() => setPaymentToReverse(null)}
+                className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed"
+              >
+                <X aria-hidden="true" className="h-5 w-5" />
+              </button>
+            </div>
+
+            {reverseError && (
+              <p
+                role="alert"
+                className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700"
+              >
+                {reverseError}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isReversing}
+                onClick={() => setPaymentToReverse(null)}
+                className="rounded-lg bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+              >
+                Keep Payment
+              </button>
+              <button
+                type="button"
+                disabled={isReversing}
+                onClick={confirmReversePayment}
+                className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isReversing && (
+                  <LoaderCircle
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 animate-spin"
+                  />
+                )}
+                {isReversing ? "Reversing..." : "Reverse Payment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

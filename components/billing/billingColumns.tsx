@@ -72,7 +72,7 @@ export function getBillingColumns({
     {
       header: "Actions",
       accessor: (invoice) => (
-        <div className="flex min-w-max flex-wrap items-center justify-end gap-2">
+        <div className="flex min-w-max flex-wrap items-center justify-start gap-2">
           {invoice.status === "DRAFT" && (
             <button
               onClick={() => onIssue(invoice)}
@@ -100,7 +100,7 @@ export function getBillingColumns({
             Details
           </Link>
 
-          <button
+          {/* <button
             onClick={() => onEdit(invoice)}
             aria-disabled={invoice.status !== "DRAFT"}
             title={
@@ -115,7 +115,7 @@ export function getBillingColumns({
             }`}
           >
             Edit
-          </button>
+          </button> */}
 
           {invoice.status === "CANCELLED" ? (
             <button

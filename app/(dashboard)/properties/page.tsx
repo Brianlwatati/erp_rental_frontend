@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { Plus, Building2 } from "lucide-react";
 import { apiFetch } from "@/lib/api_client";
 import { Property } from "@/types/property";
 import EmptyPropertyState from "@/components/property/property/EmptyPropertyState";
-import PropertyStatsBar from "@/components/property/property/PropertyStatsBar";
 import PropertyControlBar from "@/components/property/property/PropertyControlBar";
 import PropertyListView from "@/components/property/property/PropertyListView";
 import PropertyGridView from "@/components/property/property/PropertyGridView";
@@ -23,7 +23,7 @@ export default function PropertiesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Filter logic
+  // Filter logic across property names, codes, and locations
   const filteredProperties = useMemo(() => {
     if (!searchQuery.trim()) return properties;
     const query = searchQuery.toLowerCase();
@@ -37,69 +37,54 @@ export default function PropertiesPage() {
     });
   }, [properties, searchQuery]);
 
-  // Unique city count
-  const uniqueCities = useMemo(() => {
-    const cities = properties.map((p) => p.city).filter(Boolean);
-    return new Set(cities).size;
-  }, [properties]);
-
   return (
-    <div className="space-y-6">
-      {/* Header Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-5">
+    <div className="space-y-5 max-w-7xl mx-auto">
+      {/* Sleek, Focused Top Banner */}
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Properties Dashboard
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Properties
+            </h1>
+            {!loading && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-100">
+                <Building2 className="w-3.5 h-3.5 text-blue-500" />
+                {properties.length}{" "}
+                {properties.length === 1 ? "Property" : "Properties"}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage real estate assets, buildings, and tenant portfolios.
+            Select a property to manage its buildings, units, and tenant
+            operations.
           </p>
         </div>
+
         <Link
           href="/properties/new"
-          className="px-4 py-2.5 bg-blue-600 text-white font-medium text-xs rounded-xl hover:bg-blue-700 transition shadow-sm inline-flex items-center gap-2 self-start sm:self-auto"
+          className="px-4 py-2.5 bg-blue-600 text-white font-semibold text-xs rounded-xl hover:bg-blue-700 transition shadow-xs inline-flex items-center gap-2 self-start sm:self-auto cursor-pointer"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+          <Plus className="w-4 h-4" />
           Add Property
         </Link>
       </div>
 
-      {/* Main Page Body */}
+      {/* Main Page Content */}
       {loading ? (
-        <>
-          <div className="h-168 sm:hidden bg-slate-100/70 animate-pulse rounded-2xl border border-slate-200" />
-          <div className="hidden grid-cols-1 gap-5 sm:grid md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="h-48 bg-slate-100/70 animate-pulse rounded-2xl border border-slate-200"
-              />
-            ))}
-          </div>
-        </>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 pt-2">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="h-44 bg-slate-100/80 animate-pulse rounded-2xl border border-slate-200/60"
+            />
+          ))}
+        </div>
       ) : properties.length === 0 ? (
-        /* Empty State (When database is empty) */
+        /* Empty state when database is empty */
         <EmptyPropertyState />
       ) : (
-        /* Content State (When properties exist) */
-        <>
-          <PropertyStatsBar
-            totalAssets={properties.length}
-            uniqueCities={uniqueCities}
-          />
-
+        /* Property list content with simple search and layout toggle */
+        <div className="space-y-4">
           <PropertyControlBar
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -118,7 +103,7 @@ export default function PropertiesPage() {
           ) : (
             <PropertyListView properties={filteredProperties} />
           )}
-        </>
+        </div>
       )}
     </div>
   );

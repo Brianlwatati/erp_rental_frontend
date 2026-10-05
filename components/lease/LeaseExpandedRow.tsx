@@ -8,6 +8,7 @@ import {
   CircleStop,
   ExternalLink,
   FileCheck,
+  FileX,
   LoaderCircle,
   Printer,
   Trash2,
@@ -36,6 +37,12 @@ export function LeaseExpandedRow({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isCancelInvoiceModalOpen, setIsCancelInvoiceModalOpen] =
+    useState(false);
+  const [isCancellingInvoice, setIsCancellingInvoice] = useState(false);
+  const [cancelInvoiceError, setCancelInvoiceError] = useState<string | null>(
+    null,
+  );
 
   const formatCurrency = (amount?: number) =>
     new Intl.NumberFormat("en-KE", {
@@ -87,6 +94,31 @@ export function LeaseExpandedRow({
       );
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleCancelInvoice = async () => {
+    if (!lease.lease_invoice_id) return;
+
+    setIsCancellingInvoice(true);
+    setCancelInvoiceError(null);
+    try {
+      await apiFetch(`/invoices/${lease.lease_invoice_id}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({
+          id: lease.lease_invoice_id,
+          lease_id: lease.id,
+        }),
+      });
+      setIsCancelInvoiceModalOpen(false);
+      await onSuccess();
+    } catch (err) {
+      setCancelInvoiceError(
+        err instanceof Error ? err.message : "Failed to cancel invoice.",
+      );
+      setIsCancelInvoiceModalOpen(false);
+    } finally {
+      setIsCancellingInvoice(false);
     }
   };
 
@@ -229,29 +261,35 @@ export function LeaseExpandedRow({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={handleExtend}
-          disabled={isExtending || lease.status === "TERMINATED"}
-          title={
-            lease.status === "TERMINATED"
-              ? "Terminated leases cannot be extended"
-              : undefined
-          }
-          className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isExtending ? (
-            <LoaderCircle
-              aria-hidden="true"
-              className="h-3.5 w-3.5 animate-spin"
-            />
-          ) : (
-            <CalendarPlus aria-hidden="true" className="h-3.5 w-3.5" />
-          )}
-          {isExtending ? "Extending..." : "Extend to Next Month"}
-        </button>
-
         {lease.status !== "TERMINATED" && (
+          <button
+            type="button"
+            onClick={handleExtend}
+            disabled={isExtending}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:cursor-wait disabled:opacity-60"
+          >
+            {isExtending ? (
+              <LoaderCircle
+                aria-hidden="true"
+                className="h-3.5 w-3.5 animate-spin"
+              />
+            ) : (
+              <CalendarPlus aria-hidden="true" className="h-3.5 w-3.5" />
+            )}
+            {isExtending ? "Extending..." : "Extend to Next Month"}
+          </button>
+        )}
+
+        {lease.lease_invoice_id != null ? (
+          <button
+            type="button"
+            onClick={() => setIsCancelInvoiceModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50"
+          >
+            <FileX aria-hidden="true" className="h-3.5 w-3.5" />
+            Cancel Invoice
+          </button>
+        ) : lease.status !== "TERMINATED" && lease.status !== "CANCELLED" ? (
           <button
             type="button"
             onClick={() => setIsTerminationModalOpen(true)}
@@ -260,21 +298,29 @@ export function LeaseExpandedRow({
             <CircleStop aria-hidden="true" className="h-3.5 w-3.5" />
             Terminate
           </button>
-        )}
+        ) : null}
 
-        <button
-          type="button"
-          onClick={() => setIsDeleteModalOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-        >
-          <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
-          Delete
-        </button>
+        {(lease.status === "TERMINATED" || lease.status === "CANCELLED") &&
+          lease.lease_invoice_id == null && (
+          <button
+            type="button"
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+          >
+            <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+            Delete
+          </button>
+        )}
       </div>
 
       {deleteError && (
         <p role="alert" className="text-xs font-medium text-rose-700">
           {deleteError}
+        </p>
+      )}
+      {cancelInvoiceError && (
+        <p role="alert" className="text-xs font-medium text-rose-700">
+          {cancelInvoiceError}
         </p>
       )}
       {extendError && (
@@ -316,6 +362,17 @@ export function LeaseExpandedRow({
         description={`Are you sure you want to delete lease ${lease.lease_number}? This action cannot be undone.`}
         confirmLabel="Delete Lease"
         isLoading={isDeleting}
+      />
+      <DeleteConfirmModal
+        isOpen={isCancelInvoiceModalOpen}
+        onClose={() => setIsCancelInvoiceModalOpen(false)}
+        onConfirm={handleCancelInvoice}
+        title="Cancel Invoice?"
+        entityName={lease.lease_invoice_id || undefined}
+        description="Cancel this invoice before removing the lease."
+        confirmLabel="Cancel Invoice"
+        loadingLabel="Cancelling..."
+        isLoading={isCancellingInvoice}
       />
     </div>
   );

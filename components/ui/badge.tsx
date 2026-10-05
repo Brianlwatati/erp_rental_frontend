@@ -22,6 +22,7 @@ type BadgeStatus =
   | "BLACKLISTED"
   | "DRAFT"
   | "TERMINATED"
+  | "CANCELLED"
   | "OPEN";
 
 interface BadgeProps {

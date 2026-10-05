@@ -1,7 +1,12 @@
 import { Unit } from "./property";
 import { Tenant } from "./tenant";
 
-export type LeaseStatus = "DRAFT" | "ACTIVE" | "EXPIRED" | "TERMINATED";
+export type LeaseStatus =
+  | "DRAFT"
+  | "ACTIVE"
+  | "EXPIRED"
+  | "TERMINATED"
+  | "CANCELLED";
 
 export interface Lease {
   id: string;
