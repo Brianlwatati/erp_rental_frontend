@@ -24,7 +24,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [sidebarOpen]);
 
   return (
-    <div className="flex min-h-dvh bg-slate-50">
+    <div className="flex h-dvh overflow-hidden bg-slate-50">
       <Sidebar
         open={sidebarOpen}
         collapsed={sidebarCollapsed}
@@ -33,7 +33,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="min-w-0 flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6">
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6">
           {children}
         </main>
       </div>

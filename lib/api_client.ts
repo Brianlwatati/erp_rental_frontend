@@ -113,9 +113,16 @@ export async function apiFetch<T>(
       headers,
       cache: "no-store",
     });
-  } catch {
+  } catch (err) {
+    if (
+      options.signal?.aborted ||
+      (err instanceof Error && err.name === "AbortError")
+    ) {
+      throw err;
+    }
+
     throw new Error(
-      "Unable to reach the server. Please check your connection.",
+      "Unable to reach the rental API. Check that the API server is running and reachable.",
     );
   }
 
@@ -127,9 +134,14 @@ export async function apiFetch<T>(
     if (response.status === 401 && typeof window !== "undefined") {
       await handleUnauthorizedResponse();
     }
+    const message = result?.message?.trim();
     throw new Error(
-      result?.message ||
-        "An error occurred while communicating with the server.",
+      message ||
+        (response.ok
+          ? "The server returned an invalid or unsuccessful response."
+          : `The API request failed with status ${response.status}${
+              response.statusText ? ` ${response.statusText}` : ""
+            }.`),
     );
   }
 
