@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api_client";
 import { Payment } from "@/types/payment";
 import { Column, DataTable } from "@/components/ui/data-table";
 import { PaymentModal } from "@/components/payment/PaymentModal";
+import { EmptyPaymentState } from "@/components/payment/EmptyPaymentState";
 import { Tenant } from "@/types/tenant";
 import { Invoice } from "@/types/invoice";
 
@@ -18,6 +19,10 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [unpaidInvoices, setUnpaidInvoices] = useState<Invoice[]>([]);
+
+  // Search & Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const [isModalOpen, setIsModalOpen] = useState(
     Boolean(preselectedInvoiceId || preselectedTenantId),
@@ -62,6 +67,26 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("ALL");
+  };
+
+  const filteredPayments = payments.filter((payment) => {
+    const query = searchTerm.toLowerCase().trim();
+    const matchesSearch =
+      !query ||
+      payment.payment_number?.toLowerCase().includes(query) ||
+      payment.reference_number?.toLowerCase().includes(query) ||
+      payment.payment_method?.toLowerCase().includes(query) ||
+      payment.amount?.toString().includes(query);
+
+    const matchesStatus =
+      statusFilter === "ALL" || payment.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const columns: Column<Payment>[] = [
     {
@@ -144,18 +169,60 @@ export default function PaymentsPage() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition"
+          className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition shadow-sm self-start sm:self-auto"
         >
           + Record Payment
         </button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={payments}
-        loading={loading}
-        emptyMessage="No payments found."
-      />
+      {/* Filter Controls — visible only when payment records exist */}
+      {payments.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="Search payment #, ref code, amount, or method..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="POSTED">POSTED</option>
+            <option value="PENDING">PENDING</option>
+            <option value="REVERSED">REVERSED</option>
+          </select>
+        </div>
+      )}
+
+      {/* View Logic */}
+      {loading ? (
+        <div className="p-12 text-center text-slate-500 text-xs bg-white rounded-xl border border-slate-200">
+          Loading payments...
+        </div>
+      ) : payments.length === 0 ? (
+        /* Empty directory state */
+        <EmptyPaymentState onRecordPayment={() => setIsModalOpen(true)} />
+      ) : filteredPayments.length === 0 ? (
+        /* Filter/search empty state */
+        <EmptyPaymentState
+          onRecordPayment={() => setIsModalOpen(true)}
+          searchTerm={searchTerm}
+          statusFilter={statusFilter}
+          onClearFilters={clearFilters}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredPayments}
+          loading={false}
+          emptyMessage="No payments found."
+        />
+      )}
 
       {/* Contextual Modal */}
       <PaymentModal

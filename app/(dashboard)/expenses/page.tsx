@@ -10,6 +10,7 @@ import { ExpenseCategoryTable } from "@/components/expense/ExpenseCategoryTable"
 import { ExpenseTable } from "@/components/expense/ExpenseTable";
 import { ExpenseTabs, ExpenseTab } from "@/components/expense/ExpenseTabs";
 import { VendorTable } from "@/components/expense/VendorTable";
+import { EmptyExpenseState } from "@/components/expense/EmptyExpenseState";
 import { Property } from "@/types/property";
 
 export default function ExpensesPage() {
@@ -84,6 +85,45 @@ export default function ExpensesPage() {
     setIsVendorModalOpen(true);
   };
 
+  // Helper getters to evaluate whether the current active tab list is empty
+  const getActiveTabTotalCount = () => {
+    if (activeTab === "expenses") return expenses.length;
+    if (activeTab === "categories") return categories.length;
+    return vendors.length;
+  };
+
+  const getFilteredCount = () => {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return getActiveTabTotalCount();
+
+    if (activeTab === "expenses") {
+      return expenses.filter(
+        (exp) =>
+          exp.description?.toLowerCase().includes(term) ||
+          exp.amount?.toString().includes(term),
+      ).length;
+    }
+
+    if (activeTab === "categories") {
+      return categories.filter(
+        (cat) =>
+          cat.name?.toLowerCase().includes(term) ||
+          cat.code?.toLowerCase().includes(term),
+      ).length;
+    }
+
+    return vendors.filter(
+      (ven) =>
+        ven.name?.toLowerCase().includes(term) ||
+        ven.email?.toLowerCase().includes(term) ||
+        ven.phone?.includes(term) ||
+        ven.contact_person?.toLowerCase().includes(term),
+    ).length;
+  };
+
+  const totalCount = getActiveTabTotalCount();
+  const filteredCount = getFilteredCount();
+
   return (
     <div className="p-0 max-w-7xl mx-auto space-y-6">
       {/* Page Title & Context Header */}
@@ -101,7 +141,7 @@ export default function ExpensesPage() {
         {/* Tab-driven Action Button */}
         <button
           onClick={handleCreate}
-          className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition"
+          className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm"
         >
           {activeTab === "expenses" && "+ Record Expense"}
           {activeTab === "categories" && "+ Add Category"}
@@ -120,23 +160,36 @@ export default function ExpensesPage() {
         }}
       />
 
-      {/* Controls Bar */}
-      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <input
-          type="text"
-          placeholder={`Search ${activeTab}...`}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full sm:w-64 px-3 py-1.5 border border-slate-300 rounded-lg text-xs"
-        />
-      </div>
+      {/* Controls Bar — render only when total records for the tab exist */}
+      {totalCount > 0 && (
+        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <input
+            type="text"
+            placeholder={`Search ${activeTab}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full sm:w-64 px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      )}
 
-      {/* Content Panels */}
+      {/* Content Panels / Empty View Handlers */}
       <div>
         {loading ? (
-          <div className="p-8 text-center text-xs text-slate-500">
+          <div className="p-12 text-center text-xs text-slate-500 bg-white rounded-2xl border border-slate-200">
             Loading records...
           </div>
+        ) : totalCount === 0 ? (
+          /* Empty database state for active tab */
+          <EmptyExpenseState activeTab={activeTab} onCreateNew={handleCreate} />
+        ) : filteredCount === 0 ? (
+          /* Search/Filter empty state */
+          <EmptyExpenseState
+            activeTab={activeTab}
+            onCreateNew={handleCreate}
+            searchTerm={searchTerm}
+            onClearSearch={() => setSearchTerm("")}
+          />
         ) : (
           <>
             {activeTab === "expenses" && (

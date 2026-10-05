@@ -7,6 +7,7 @@ import { Tenant } from "@/types/tenant";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/badge";
 import { TenantModal } from "@/components/tenant/tenant-modal";
+import { EmptyTenantState } from "@/components/tenant/EmptyTenantState";
 
 export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -20,7 +21,7 @@ export default function TenantsPage() {
     try {
       setLoading(true);
       const res = await apiFetch<Tenant[]>("/tenants");
-      setTenants(res.data);
+      setTenants(res.data || []);
     } catch (err) {
       console.error("Failed to load tenants:", err);
     } finally {
@@ -40,6 +41,11 @@ export default function TenantsPage() {
   const handleNew = () => {
     setSelectedTenant(null);
     setIsModalOpen(true);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("ALL");
   };
 
   const filteredTenants = tenants.filter((tenant) => {
@@ -140,6 +146,7 @@ export default function TenantsPage() {
 
   return (
     <div className="p-0 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
@@ -152,43 +159,54 @@ export default function TenantsPage() {
 
         <button
           onClick={handleNew}
-          className="px-4 py-2 bg-blue-600 text-white font-medium text-xs rounded-lg hover:bg-blue-700 transition shadow-sm"
+          className="px-4 py-2 bg-blue-600 text-white font-medium text-xs rounded-lg hover:bg-blue-700 transition shadow-sm self-start sm:self-auto"
         >
           + Add Tenant
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          placeholder="Search by name, email, phone, or national ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      {/* Filter controls — hidden if directory has no tenants at all */}
+      {tenants.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="Search by name, email, phone, or national ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="ALL">All Statuses</option>
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="INACTIVE">INACTIVE</option>
-          <option value="BLACKLISTED">BLACKLISTED</option>
-        </select>
-      </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+            <option value="BLACKLISTED">BLACKLISTED</option>
+          </select>
+        </div>
+      )}
 
+      {/* View Logic */}
       {loading ? (
-        <div className="p-8 text-center text-slate-500 text-sm">
+        <div className="p-12 text-center text-slate-500 text-sm bg-white rounded-xl border border-slate-200">
           Loading tenants...
         </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={filteredTenants}
-          emptyMessage="No tenants found."
+      ) : tenants.length === 0 ? (
+        /* Empty directory state */
+        <EmptyTenantState onAddTenant={handleNew} />
+      ) : filteredTenants.length === 0 ? (
+        /* Empty filtered result state */
+        <EmptyTenantState
+          onAddTenant={handleNew}
+          searchTerm={searchTerm}
+          statusFilter={statusFilter}
+          onClearFilters={clearFilters}
         />
+      ) : (
+        <DataTable columns={columns} data={filteredTenants} />
       )}
 
       {isModalOpen && (

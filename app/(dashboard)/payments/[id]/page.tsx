@@ -127,7 +127,7 @@ export default function PaymentDetailsPage({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-500 gap-2">
+      <div className="flex flex-col items-center justify-center min-h-100 text-slate-500 gap-2">
         <Clock className="w-6 h-6 animate-spin text-blue-600" />
         <p className="text-sm">Loading payment details...</p>
       </div>
@@ -370,7 +370,7 @@ export default function PaymentDetailsPage({
                     <td className="py-3 px-4 font-mono text-slate-600">
                       <div className="flex items-center gap-1.5">
                         <Hash className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="truncate max-w-[180px] sm:max-w-xs">
+                        <span className="truncate max-w-45 sm:max-w-xs">
                           {alloc.invoice_id}
                         </span>
                       </div>
