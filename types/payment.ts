@@ -37,7 +37,7 @@ export interface PaymentAllocation {
 export interface Payment {
   id: string;
   companyId: string;
-  tenantId: string;
+  tenant_id: string;
   payment_number: string;
   payment_date: string;
   amount: number;

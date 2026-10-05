@@ -149,7 +149,7 @@ export function Building2DGrid({
                   <button
                     type="button"
                     onClick={() => onAddUnitClick?.(floorNum, nextGridColumn)}
-                    className="group flex h-21 w-36 shrink-0 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 p-2 text-slate-500 transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600"
+                    className="group print:hidden flex h-21 w-36 shrink-0 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 p-2 text-slate-500 transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600"
                   >
                     <span className="text-lg font-bold transition-transform group-hover:scale-110">
                       +

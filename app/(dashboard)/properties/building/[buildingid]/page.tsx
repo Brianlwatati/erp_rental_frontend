@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState, use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { apiFetch } from "@/lib/api_client";
 import { Building, Unit, UnitType } from "@/types/property";
 import { UnitModal } from "@/components/property/unit/unit-modal";
@@ -105,8 +105,30 @@ export default function BuildingDetailsPage({
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-4 sm:p-6">
+      <style jsx global>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            #printable-grid,
+            #printable-grid * {
+              visibility: visible;
+            }
+            #printable-grid {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+            }
+            #printable-grid .overflow-x-auto {
+              overflow: visible !important;
+            }
+          }
+        `}
+      </style>
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4 print:hidden">
         <div>
           <Link
             href={`/properties/${building.property_id}`}
@@ -124,24 +146,36 @@ export default function BuildingDetailsPage({
             • Code: <span className="font-mono">{building.code}</span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleNewUnit}
-          className="px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors"
-        >
-          + New Unit
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <Printer aria-hidden="true" className="h-4 w-4" />
+            Print Grid
+          </button>
+          <button
+            type="button"
+            onClick={handleNewUnit}
+            className="px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors"
+          >
+            + New Unit
+          </button>
+        </div>
       </div>
 
       {/* 2D Elevation View */}
-      <Building2DGrid
-        building={building}
-        units={units}
-        onUnitClick={(unit) =>
-          router.push(`/properties/${unit.property_id}/units/${unit.id}`)
-        }
-        onAddUnitClick={openUnitModal}
-      />
+      <div id="printable-grid">
+        <Building2DGrid
+          building={building}
+          units={units}
+          onUnitClick={(unit) =>
+            router.push(`/properties/${unit.property_id}/units/${unit.id}`)
+          }
+          onAddUnitClick={openUnitModal}
+        />
+      </div>
       <UnitModal
         buildings={modalBuildings}
         unitTypes={unitTypes}

@@ -191,7 +191,7 @@ export function PropertyBuildingsTab({
                 </button>
 
                 <Link
-                  href={`/properties/${propertyId}/building/${building.id}`}
+                  href={`/properties/building/${building.id}`}
                   className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 group/link"
                 >
                   View Floor Grid

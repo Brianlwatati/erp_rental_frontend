@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api_client";
 import { Payment } from "@/types/payment";
+import { Column, DataTable } from "@/components/ui/data-table";
 import { PaymentModal } from "@/components/payment/PaymentModal";
 import { Tenant } from "@/types/tenant";
 import { Invoice } from "@/types/invoice";
@@ -61,6 +63,75 @@ export default function PaymentsPage() {
     fetchData();
   }, []);
 
+  const columns: Column<Payment>[] = [
+    {
+      header: "Payment No.",
+      accessor: (payment) => (
+        <Link
+          href={`/payments/${payment.id}`}
+          className="font-medium text-blue-700 hover:underline"
+        >
+          {payment.payment_number}
+        </Link>
+      ),
+    },
+    {
+      header: "Date",
+      accessor: (payment) => payment.payment_date,
+    },
+    {
+      header: "Method",
+      accessor: (payment) => (
+        <span className="px-2 py-0.5 rounded bg-slate-100 font-semibold text-[10px]">
+          {payment.payment_method}
+        </span>
+      ),
+    },
+    {
+      header: "Ref Code",
+      accessor: (payment) => (
+        <span className="font-mono text-slate-600">
+          {payment.reference_number || "—"}
+        </span>
+      ),
+    },
+    {
+      header: "Amount",
+      accessor: (payment) => (
+        <span className="font-bold text-slate-900">
+          KES {payment.amount.toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      header: "Status",
+      accessor: (payment) => (
+        <span
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            payment.status === "POSTED"
+              ? "bg-emerald-50 text-emerald-700"
+              : payment.status === "REVERSED"
+                ? "bg-rose-50 text-rose-700"
+                : "bg-amber-50 text-amber-700"
+          }`}
+        >
+          {payment.status}
+        </span>
+      ),
+    },
+    {
+      header: "Details",
+      accessor: (payment) => (
+        <Link
+          href={`/payments/${payment.id}`}
+          className="text-xs font-semibold text-blue-700 hover:underline"
+        >
+          View details
+        </Link>
+      ),
+    },
+  ];
+
   return (
     <div className="p-0 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -79,61 +150,12 @@ export default function PaymentsPage() {
         </button>
       </div>
 
-      {/* Payments Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-        {loading ? (
-          <div className="p-8 text-center text-xs text-slate-500">
-            Loading payments...
-          </div>
-        ) : (
-          <table className="w-full min-w-160 text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
-              <tr>
-                <th className="p-3">Payment No.</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Method</th>
-                <th className="p-3">Ref Code</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {payments.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50/50">
-                  <td className="p-3 font-medium text-slate-900">
-                    {p.payment_number}
-                  </td>
-                  <td className="p-3">{p.payment_date}</td>
-                  <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 font-semibold text-[10px]">
-                      {p.payment_method}
-                    </span>
-                  </td>
-                  <td className="p-3 font-mono text-slate-600">
-                    {p.reference_number || "—"}
-                  </td>
-                  <td className="p-3 font-bold text-slate-900">
-                    KES {p.amount.toLocaleString()}
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        p.status === "POSTED"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : p.status === "REVERSED"
-                            ? "bg-rose-50 text-rose-700"
-                            : "bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={payments}
+        loading={loading}
+        emptyMessage="No payments found."
+      />
 
       {/* Contextual Modal */}
       <PaymentModal

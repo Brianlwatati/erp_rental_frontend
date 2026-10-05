@@ -188,6 +188,12 @@ export function LeaseModal({
         const initialBuilding = buildings.find(
           (building) => building.id === initialBuildingId,
         );
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+        const lastDay = String(
+          new Date(year, currentDate.getMonth() + 1, 0).getDate(),
+        ).padStart(2, "0");
         setSelectedBuildingId(initialBuildingId);
         setUnits([]);
         setFormData({
@@ -204,8 +210,8 @@ export function LeaseModal({
           tenantEmail: "",
           tenantPhone: "",
           leaseNumber: "",
-          startDate: "",
-          endDate: "",
+          startDate: `${year}-${month}-01`,
+          endDate: `${year}-${month}-${lastDay}`,
           monthlyRent: "",
           depositAmount: 0,
           includeDepositInFirstInvoice: false,
