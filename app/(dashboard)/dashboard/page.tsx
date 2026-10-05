@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api_client";
+import {
+  Building2,
+  Home,
+  Users,
+  PlusCircle,
+  Sparkles,
+  ArrowRight,
+  Receipt,
+  Wrench,
+} from "lucide-react";
 
 export interface OverviewData {
   totalProperties: number;
@@ -58,10 +69,119 @@ export default function OverviewPage() {
     );
   }
 
+  // Check if portfolio is empty (no properties, buildings, or units created yet)
+  const isEmptyState =
+    (data.totalProperties || 0) === 0 &&
+    (data.totalBuildings || 0) === 0 &&
+    (data.totalUnits || 0) === 0 &&
+    (data.totalTenants || 0) === 0;
+
   const calculatedNetIncome =
     data.netIncome !== undefined
       ? data.netIncome
       : (data.totalRevenue || 0) - (data.totalExpenses || 0);
+
+  // Render Welcome view if the account has no properties/data yet
+  if (isEmptyState) {
+    return (
+      <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
+        {/* Welcome Header Banner */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 text-white rounded-2xl p-8 sm:p-10 border border-slate-800 shadow-sm">
+          <div className="relative z-10 max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-300 border border-blue-400/20">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Welcome to Your Property Dashboard</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Let&apos;s start building your portfolio
+            </h1>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Your real estate management hub is setup and ready. Add your first
+              property or unit to unlock real-time financial tracking, occupancy
+              analytics, and tenant insights.
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/properties/new"
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors shadow-sm"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Add Your First Property
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Getting Started Steps */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            Quick Onboarding Steps
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Step 1 */}
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <h3 className="font-semibold text-sm text-slate-900">
+                1. Add Properties & Units
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Create buildings or estates and set up your rental units with
+                default pricing.
+              </p>
+              <Link
+                href="/properties"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline pt-1"
+              >
+                Go to Properties <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                <Users className="w-5 h-5" />
+              </div>
+              <h3 className="font-semibold text-sm text-slate-900">
+                2. Onboard Tenants & Leases
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Register tenants, assign them to active leases, and configure
+                security deposits.
+              </p>
+              <Link
+                href="/tenants"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:underline pt-1"
+              >
+                Go to Tenants <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                <Receipt className="w-5 h-5" />
+              </div>
+              <h3 className="font-semibold text-sm text-slate-900">
+                3. Track Invoices & Payments
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Generate monthly rent invoices, record payment receipts, and
+                view reports.
+              </p>
+              <Link
+                href="/billing"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline pt-1"
+              >
+                Go to Billing <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-0 max-w-7xl mx-auto space-y-6">
@@ -79,7 +199,7 @@ export default function OverviewPage() {
       {/* Grid Row 1: Operations & Occupancy */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Properties */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Total Properties
@@ -93,17 +213,14 @@ export default function OverviewPage() {
           </p>
         </div>
 
-        {/* Buildings & Units */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        {/* Buildings */}
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Buildings
             </p>
             <p className="text-2xl font-extrabold text-slate-900 mt-1">
-              {data.totalBuildings || 0}{" "}
-              {/* <span className="text-slate-400 font-normal text-lg">
-                / {data.totalUnits || 0}
-              </span> */}
+              {data.totalBuildings || 0}
             </p>
           </div>
           <p className="text-[11px] text-slate-500 mt-3 border-t border-slate-100 pt-2">
@@ -112,7 +229,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Total Tenants */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Active Tenants
@@ -127,7 +244,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Occupancy Rate */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -140,11 +257,11 @@ export default function OverviewPage() {
                     : "bg-amber-50 text-amber-700 border-amber-200"
                 }`}
               >
-                {data.occupancyRate.toFixed(2) || 0}%
+                {(data.occupancyRate || 0).toFixed(2)}%
               </span>
             </div>
             <p className="text-2xl font-extrabold text-slate-900 mt-1">
-              {data.occupancyRate.toFixed(2) || 0}%
+              {(data.occupancyRate || 0).toFixed(2)}%
             </p>
           </div>
           <p className="text-[11px] text-slate-500 mt-3 border-t border-slate-100 pt-2">
@@ -156,7 +273,7 @@ export default function OverviewPage() {
       {/* Grid Row 2: Financial Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Due */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
             Total Due
           </p>
@@ -172,7 +289,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Revenue */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
             Total Revenue
           </p>
@@ -188,7 +305,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Expenses */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
             Total Expenses
           </p>
@@ -204,7 +321,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Net Operating Income */}
-        <div className="bg-slate-900 text-white p-5 rounded-xl shadow-sm">
+        <div className="bg-slate-900 text-white p-5 rounded-xl shadow-xs">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
             Net Operating Income
           </p>
