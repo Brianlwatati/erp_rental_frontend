@@ -1,15 +1,42 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { Calendar, FileCheck, ExternalLink } from "lucide-react";
+import {
+  Calendar,
+  CalendarPlus,
+  CircleStop,
+  ExternalLink,
+  FileCheck,
+  LoaderCircle,
+  Printer,
+  Trash2,
+} from "lucide-react";
+import { apiFetch } from "@/lib/api_client";
+import { StatusBadge } from "@/components/ui/badge";
 import { Lease } from "@/types/lease";
+import { LeaseTerminationModal } from "@/components/lease/LeaseTerminationModal";
+import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 
 interface LeaseExpandedRowProps {
   lease: Lease;
+  onCreateInvoice: (lease: Lease) => void;
+  onSuccess: () => Promise<void>;
 }
 
-export function LeaseExpandedRow({ lease }: LeaseExpandedRowProps) {
+export function LeaseExpandedRow({
+  lease,
+  onCreateInvoice,
+  onSuccess,
+}: LeaseExpandedRowProps) {
+  const [isExtending, setIsExtending] = useState(false);
+  const [extendError, setExtendError] = useState<string | null>(null);
+  const [extendSuccess, setExtendSuccess] = useState(false);
+  const [isTerminationModalOpen, setIsTerminationModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const formatCurrency = (amount?: number) =>
     new Intl.NumberFormat("en-KE", {
       style: "currency",
@@ -25,9 +52,47 @@ export function LeaseExpandedRow({ lease }: LeaseExpandedRowProps) {
     ? totalRentAndCharges + depositAmount
     : totalRentAndCharges;
 
+  const handleExtend = async () => {
+    setIsExtending(true);
+    setExtendError(null);
+    setExtendSuccess(false);
+
+    try {
+      await apiFetch(`/leases/${lease.id}/extendleasemonthnew`, {
+        method: "POST",
+        body: JSON.stringify({ id: lease.id }),
+      });
+      await onSuccess();
+      setExtendSuccess(true);
+    } catch (err) {
+      setExtendError(
+        err instanceof Error ? err.message : "Failed to extend lease.",
+      );
+    } finally {
+      setIsExtending(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await apiFetch(`/leases/${lease.id}/delete`, { method: "DELETE" });
+      setIsDeleteModalOpen(false);
+      await onSuccess();
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete lease.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-5 text-xs text-slate-700 space-y-4 bg-slate-50/90 border-l-4 border-blue-500">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Extra Charges */}
         <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
@@ -101,6 +166,128 @@ export function LeaseExpandedRow({ lease }: LeaseExpandedRowProps) {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-2">
+            Property
+          </span>
+          <span className="font-semibold text-slate-800 block">
+            {lease.property_name || "—"}
+          </span>
+          {lease.property_code && (
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              Code: {lease.property_code}
+            </span>
+          )}
+        </div>
+
+        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-2">
+            Building
+          </span>
+          <span className="font-semibold text-slate-800 block">
+            {lease.building_name || "—"}
+          </span>
+          {lease.building_code && (
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              Code: {lease.building_code}
+            </span>
+          )}
+        </div>
+
+        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-2">
+            Status
+          </span>
+          {lease.status === "TERMINATED" ? (
+            <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
+              Terminated
+            </span>
+          ) : (
+            <StatusBadge status={lease.status} />
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href={`/leases/${lease.id}/print`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          <Printer aria-hidden="true" className="h-3.5 w-3.5" />
+          Print
+        </Link>
+
+        {lease.lease_invoice_id == null && lease.status !== "TERMINATED" && (
+          <button
+            type="button"
+            onClick={() => onCreateInvoice(lease)}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+          >
+            <FileCheck aria-hidden="true" className="h-3.5 w-3.5" />
+            Invoice
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={handleExtend}
+          disabled={isExtending || lease.status === "TERMINATED"}
+          title={
+            lease.status === "TERMINATED"
+              ? "Terminated leases cannot be extended"
+              : undefined
+          }
+          className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExtending ? (
+            <LoaderCircle
+              aria-hidden="true"
+              className="h-3.5 w-3.5 animate-spin"
+            />
+          ) : (
+            <CalendarPlus aria-hidden="true" className="h-3.5 w-3.5" />
+          )}
+          {isExtending ? "Extending..." : "Extend to Next Month"}
+        </button>
+
+        {lease.status !== "TERMINATED" && (
+          <button
+            type="button"
+            onClick={() => setIsTerminationModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+          >
+            <CircleStop aria-hidden="true" className="h-3.5 w-3.5" />
+            Terminate
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setIsDeleteModalOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+        >
+          <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+          Delete
+        </button>
+      </div>
+
+      {deleteError && (
+        <p role="alert" className="text-xs font-medium text-rose-700">
+          {deleteError}
+        </p>
+      )}
+      {extendError && (
+        <p role="alert" className="text-xs font-medium text-rose-700">
+          {extendError}
+        </p>
+      )}
+      {extendSuccess && (
+        <p role="status" className="text-xs font-medium text-emerald-700">
+          Lease extended to next month.
+        </p>
+      )}
+
       {lease.notes && (
         <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
           <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
@@ -111,6 +298,25 @@ export function LeaseExpandedRow({ lease }: LeaseExpandedRowProps) {
           </p>
         </div>
       )}
+
+      {isTerminationModalOpen && (
+        <LeaseTerminationModal
+          lease={lease}
+          onClose={() => setIsTerminationModalOpen(false)}
+          onSuccess={onSuccess}
+        />
+      )}
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Lease"
+        entityName={lease.lease_number}
+        description={`Are you sure you want to delete lease ${lease.lease_number}? This action cannot be undone.`}
+        confirmLabel="Delete Lease"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

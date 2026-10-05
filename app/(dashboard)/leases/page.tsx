@@ -33,9 +33,9 @@ export default function LeasesPage() {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [blockedLease, setBlockedLease] = useState<Lease | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const [leasesRes, buildingsRes, tenantsRes] = await Promise.all([
         apiFetch<Lease[]>("/leases").catch(() => ({ data: [] })),
         apiFetch<Building[]>("/buildings/all").catch(() => ({ data: [] })),
@@ -48,7 +48,7 @@ export default function LeasesPage() {
     } catch (err) {
       console.error("Failed to load leases data:", err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, []);
 
@@ -64,6 +64,7 @@ export default function LeasesPage() {
   }, [fetchData]);
 
   const handleEdit = useCallback((lease: Lease) => {
+    if (lease.status === "TERMINATED") return;
     if (lease.lease_invoice_id != null) {
       setBlockedLease(lease);
       return;
@@ -79,7 +80,7 @@ export default function LeasesPage() {
   };
 
   const handleCreateInvoice = useCallback((lease: Lease) => {
-    if (lease.lease_invoice_id != null) return;
+    if (lease.status === "TERMINATED" || lease.lease_invoice_id != null) return;
     setSelectedLease(null);
     setInvoiceLeaseId(lease.id);
     setIsInvoiceModalOpen(true);
@@ -118,9 +119,8 @@ export default function LeasesPage() {
     () =>
       getLeaseColumns({
         onEdit: handleEdit,
-        onCreateInvoice: handleCreateInvoice,
       }),
-    [handleEdit, handleCreateInvoice],
+    [handleEdit],
   );
 
   return (
@@ -175,7 +175,13 @@ export default function LeasesPage() {
           columns={columns}
           data={filteredLeases}
           emptyMessage="No lease agreements found."
-          renderExpandedRow={(lease) => <LeaseExpandedRow lease={lease} />}
+          renderExpandedRow={(lease) => (
+            <LeaseExpandedRow
+              lease={lease}
+              onCreateInvoice={handleCreateInvoice}
+              onSuccess={() => fetchData(false)}
+            />
+          )}
         />
       )}
 
